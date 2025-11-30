@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
 import 'package:game_setter/features/players/data/player_repository.dart';
 import 'package:game_setter/features/players/presentation/widgets/player_card.dart';
+import 'package:game_setter/features/players/presentation/widgets/player_card_extension.dart';
 import 'add_player_page.dart';
 
 class PlayersPage extends StatefulWidget {
@@ -37,6 +38,14 @@ class _PlayersPageState extends State<PlayersPage> {
     }
   }
 
+  void goToEditPlayer(Player p) async {
+    final updated = await Navigator.pushNamed(context, '/editPlayer', arguments: p);
+
+    if (updated == true) {
+      loadPlayers();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,7 +57,9 @@ class _PlayersPageState extends State<PlayersPage> {
               itemCount: players.length,
               itemBuilder: (context, i) {
                 final p = players[i];
-                return PlayerCard(player: p);
+                return PlayerCard(player: p).onCardAction(() {
+                  loadPlayers();
+                });
               },
             ),
     );
