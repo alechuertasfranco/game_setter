@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:game_setter/features/players/data/player_repository.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
+import 'package:game_setter/features/players/presentation/widgets/player_form.dart';
 import 'package:game_setter/features/sports/domain/entities/sport.dart';
 import 'package:game_setter/features/sports/domain/entities/position.dart';
 
@@ -124,110 +125,20 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Agregar jugador")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Nombre
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Nombre"),
-            ),
-            const SizedBox(height: 12),
-
-            // Teléfono
-            TextField(
-              controller: phoneCtrl,
-              decoration: const InputDecoration(labelText: "Teléfono"),
-              keyboardType: TextInputType.phone,
-            ),
-
-            const SizedBox(height: 12),
-
-            // Selector para elegir qué deporte agregar
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int?>(
-                    initialValue: sportToAddId,
-                    decoration: const InputDecoration(labelText: "Agregar deporte"),
-                    items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text("Seleccionar deporte")),
-                      ...sports.map((s) => DropdownMenuItem<int?>(value: s.id, child: Text(s.name))),
-                    ],
-                    onChanged: (v) => setState(() => sportToAddId = v),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(onPressed: addSelectedSport, child: const Text("Añadir")),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Lista de deportes que el usuario ha añadido
-            Expanded(
-              child: selectedSports.isEmpty
-                  ? const Center(child: Text('No hay deportes agregados'))
-                  : ListView(
-                      children: selectedSports.map((sportId) {
-                        final sport = sports.firstWhere((s) => s.id == sportId);
-                        final positions = positionsBySport[sportId] ?? [];
-                        final selectedSet = selectedPositionsBySport[sportId] ?? <int>{};
-
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: ExpansionTile(
-                            title: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(sport.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                IconButton(icon: const Icon(Icons.delete_forever), onPressed: () => removeSelectedSport(sportId)),
-                              ],
-                            ),
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text("Posiciones (elige una o varias). Si no eliges ninguna, se guardará sin posición."),
-                                    const SizedBox(height: 8),
-                                    // Mostrar positions como chips toggles
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: positions.map((pos) {
-                                        final isSelected = selectedSet.contains(pos.id);
-                                        return FilterChip(label: Text("${pos.name} (${pos.shortName})"), selected: isSelected, onSelected: (_) => togglePosition(sportId, pos.id));
-                                      }).toList(),
-                                    ),
-                                    const SizedBox(height: 8),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Importar contacto
-            ElevatedButton.icon(onPressed: pickContact, icon: const Icon(Icons.contacts), label: const Text("Importar desde contactos")),
-
-            const SizedBox(height: 12),
-
-            // Guardar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(onPressed: savePlayer, child: const Text("Guardar")),
-            ),
-          ],
-        ),
+      body: PlayerForm(
+        onSave: (player, sports, positionsBySport) async {
+          await PlayerRepository().insertPlayerOnly(player);
+          for (final sportId in sports) {
+            final posSet = positionsBySport[sportId];
+            if (posSet == null || posSet.isEmpty) {
+              await PlayerRepository().assignSportToPlayer(player.id, sportId, null);
+            } else {
+              for (final posId in posSet) {
+                await PlayerRepository().assignSportToPlayer(player.id, sportId, posId);
+              }
+            }
+          }
+        },
       ),
     );
   }

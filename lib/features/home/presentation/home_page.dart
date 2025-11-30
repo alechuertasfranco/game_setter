@@ -18,14 +18,28 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.sports_volleyball), label: 'Organizar'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Jugadores'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_gymnastics), label: 'Canchas'),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        transitionBuilder: (child, animation) {
+          // Desplazamiento horizontal + fade
+          final offsetAnimation = Tween<Offset>(begin: Offset(_currentIndex > 0 ? 1 : -1, 0), end: Offset.zero).animate(animation);
+
+          return SlideTransition(
+            position: offsetAnimation,
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+        child: pages[_currentIndex],
+      ),
+
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (i) => setState(() => _currentIndex = i),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.sports), label: 'Organizar'),
+          NavigationDestination(icon: Icon(Icons.people), label: 'Jugadores'),
+          NavigationDestination(icon: Icon(Icons.location_on), label: 'Canchas'),
         ],
       ),
     );
@@ -37,15 +51,43 @@ class _OrganizeMatchTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Organizar Partido')),
-      body: Center(
-        child: FilledButton(
-          style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20)),
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectSportPage()));
-          },
-          child: const Text('Seleccionar Deporte', style: TextStyle(fontSize: 20)),
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [Color(0xFFE3F2FD), Color(0xFFFFFFFF)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // AppBar simulado
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              child: Text('Organizar Partido', style: textTheme.headlineSmall),
+            ),
+
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Organiza tu próximo partido\nrápido y fácil', textAlign: TextAlign.center, style: textTheme.headlineSmall),
+                    const SizedBox(height: 40),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectSportPage()));
+                      },
+                      child: Text('Empezar', style: textTheme.bodyLarge?.copyWith(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

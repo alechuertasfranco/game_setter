@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
 import 'package:game_setter/features/players/data/player_repository.dart';
+import 'package:game_setter/features/players/presentation/widgets/player_form.dart';
 import 'package:game_setter/features/sports/domain/entities/sport.dart';
 import 'package:game_setter/features/sports/domain/entities/position.dart';
 
@@ -142,103 +143,24 @@ class _EditPlayerPageState extends State<EditPlayerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Editar jugador")),
-      body: sports.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: "Nombre"),
-                  ),
-                  const SizedBox(height: 12),
+      body: PlayerForm(
+        initialPlayer: widget.player,
+        onSave: (p, sports, positionsBySport) async {
+          await PlayerRepository().updatePlayerOnly(p);
+          await PlayerRepository().clearPlayerSports(p.id);
 
-                  TextField(
-                    controller: phoneCtrl,
-                    decoration: const InputDecoration(labelText: "Teléfono"),
-                    keyboardType: TextInputType.phone,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<int?>(
-                          initialValue: sportToAddId,
-                          decoration: const InputDecoration(labelText: "Agregar deporte"),
-                          items: [
-                            const DropdownMenuItem<int?>(value: null, child: Text("Seleccionar deporte")),
-                            ...sports.map((s) => DropdownMenuItem<int?>(value: s.id, child: Text(s.name))),
-                          ],
-                          onChanged: (v) => setState(() => sportToAddId = v),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(onPressed: addSelectedSport, child: const Text("Añadir")),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Expanded(
-                    child: selectedSports.isEmpty
-                        ? const Center(child: Text("No hay deportes asignados"))
-                        : ListView(
-                            children: selectedSports.map((sportId) {
-                              final sport = sports.firstWhere((s) => s.id == sportId);
-                              final positions = positionsBySport[sportId] ?? [];
-                              final selectedSet = selectedPositionsBySport[sportId] ?? <int>{};
-
-                              return Card(
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                child: ExpansionTile(
-                                  title: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(sport.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      IconButton(icon: const Icon(Icons.delete_forever), onPressed: () => removeSelectedSport(sportId)),
-                                    ],
-                                  ),
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text("Posiciones"),
-                                          const SizedBox(height: 8),
-                                          Wrap(
-                                            spacing: 8,
-                                            runSpacing: 8,
-                                            children: positions.map((pos) {
-                                              final isSelected = selectedSet.contains(pos.id);
-                                              return FilterChip(
-                                                label: Text("${pos.name} (${pos.shortName})"),
-                                                selected: isSelected,
-                                                onSelected: (_) => togglePosition(sportId, pos.id),
-                                              );
-                                            }).toList(),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                  ),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(onPressed: savePlayer, child: const Text("Guardar cambios")),
-                  ),
-                ],
-              ),
-            ),
+          for (final sportId in sports) {
+            final posSet = positionsBySport[sportId];
+            if (posSet == null || posSet.isEmpty) {
+              await PlayerRepository().assignSportToPlayer(p.id, sportId, null);
+            } else {
+              for (final posId in posSet) {
+                await PlayerRepository().assignSportToPlayer(p.id, sportId, posId);
+              }
+            }
+          }
+        },
+      ),
     );
   }
 }

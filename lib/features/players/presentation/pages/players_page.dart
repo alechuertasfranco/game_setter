@@ -48,20 +48,36 @@ class _PlayersPageState extends State<PlayersPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Jugadores")),
-      floatingActionButton: FloatingActionButton(onPressed: goToAddPlayer, child: const Icon(Icons.add)),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: players.length,
-              itemBuilder: (context, i) {
-                final p = players[i];
-                return PlayerCard(player: p).onCardAction(() {
-                  loadPlayers();
-                });
-              },
-            ),
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [Color(0xFFE3F2FD), Color(0xFFFFFFFF)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text("Jugadores", style: textTheme.headlineSmall),
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+        ),
+        floatingActionButton: FloatingActionButton(onPressed: goToAddPlayer, child: const Icon(Icons.add)),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : players.isEmpty
+            ? Center(child: Text('No hay jugadores aún', style: textTheme.bodyLarge))
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: players.length,
+                itemBuilder: (context, i) {
+                  final p = players[i];
+                  return PlayerCard(player: p).onCardAction(() {
+                    loadPlayers();
+                  });
+                },
+              ),
+      ),
     );
   }
 }
