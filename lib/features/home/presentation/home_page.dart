@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.sports), label: 'Organizar'),
+          NavigationDestination(icon: Icon(Icons.sports_volleyball), label: 'Organizar'),
           NavigationDestination(icon: Icon(Icons.people), label: 'Jugadores'),
           NavigationDestination(icon: Icon(Icons.location_on), label: 'Canchas'),
         ],

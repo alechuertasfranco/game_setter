@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
 import 'package:game_setter/features/players/data/player_repository.dart';
 import 'package:game_setter/features/players/presentation/widgets/player_card.dart';
 import 'package:game_setter/features/players/presentation/widgets/player_card_extension.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'add_player_page.dart';
 
 class PlayersPage extends StatefulWidget {
@@ -46,6 +49,30 @@ class _PlayersPageState extends State<PlayersPage> {
     }
   }
 
+  void importContact() async {
+    if (!mounted) return;
+
+    final status = await Permission.contacts.request();
+    if (!status.isGranted) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permiso para acceder a contactos denegado')));
+      return;
+    }
+
+    final List<Contact> selectedContacts = await FlutterContacts.getContacts(withProperties: true);
+
+    if (selectedContacts.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selección de contacto cancelada')));
+      return;
+    }
+
+    final stringContact = selectedContacts.first.toString();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Contacto importado: $stringContact')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -62,7 +89,29 @@ class _PlayersPageState extends State<PlayersPage> {
           elevation: 0,
           backgroundColor: Colors.transparent,
         ),
-        floatingActionButton: FloatingActionButton(onPressed: goToAddPlayer, child: const Icon(Icons.add)),
+        floatingActionButton: SpeedDial(
+          icon: Icons.add,
+          activeIcon: Icons.close,
+          overlayOpacity: 0.5,
+          spacing: 10,
+          children: [
+            SpeedDialChild(
+              child: const Icon(Icons.contacts, size: 20),
+              label: 'Importar contacto',
+              labelStyle: textTheme.bodySmall,
+              onTap: importContact,
+              shape: const CircleBorder(),
+            ),
+            SpeedDialChild(
+              child: const Icon(Icons.person_add, size: 20),
+              label: 'Agregar jugador',
+              labelStyle: textTheme.bodySmall,
+              onTap: goToAddPlayer,
+              shape: const CircleBorder(),
+            ),
+          ],
+        ),
+
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
             : players.isEmpty

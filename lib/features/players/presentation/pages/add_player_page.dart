@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:game_setter/features/players/data/player_repository.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
 import 'package:game_setter/features/players/presentation/widgets/player_form.dart';
@@ -46,20 +45,6 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
     if (!positionsBySport.containsKey(sportId)) {
       final positions = await PlayerRepository().getPositionsBySport(sportId);
       positionsBySport[sportId] = positions;
-    }
-  }
-
-  Future<void> pickContact() async {
-    if (!await FlutterContacts.requestPermission()) return;
-
-    final contact = await FlutterContacts.openExternalPick();
-    if (contact == null) return;
-
-    final full = await FlutterContacts.getContact(contact.id);
-    nameCtrl.text = full?.displayName ?? "";
-
-    if (full != null && full.phones.isNotEmpty) {
-      phoneCtrl.text = full.phones.first.number;
     }
   }
 

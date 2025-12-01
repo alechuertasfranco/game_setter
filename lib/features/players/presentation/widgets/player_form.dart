@@ -7,7 +7,7 @@ import 'package:game_setter/features/sports/domain/entities/position.dart';
 typedef OnSavePlayer = Future<void> Function(Player player, List<int> sportIds, Map<int, Set<int>> positions);
 
 class PlayerForm extends StatefulWidget {
-  final Player? initialPlayer; // null = agregar, no null = editar
+  final Player? initialPlayer;
   final OnSavePlayer onSave;
 
   const PlayerForm({super.key, this.initialPlayer, required this.onSave});
@@ -83,10 +83,11 @@ class _PlayerFormState extends State<PlayerForm> {
 
   void togglePosition(int sportId, int posId) {
     final set = selectedPositionsBySport[sportId] ?? <int>{};
-    if (set.contains(posId))
+    if (set.contains(posId)) {
       set.remove(posId);
-    else
+    } else {
       set.add(posId);
+    }
     selectedPositionsBySport[sportId] = set;
     setState(() {});
   }
