@@ -194,7 +194,7 @@ class _NotificationFormState extends State<NotificationForm> {
               if (type == 'Reserva' && matchCourt != null) ListTile(leading: const Icon(Icons.location_on), title: Text('Cancha: ${matchCourt!.name}')),
               ...allPlayers.map(
                 (p) => CheckboxListTile(
-                  title: Text(p.player != null ? '${p.player?.name} - ${p.player?.phone}' : p.playerId, style: textTheme.bodyMedium),
+                  title: Text(p.player != null ? '${p.player?.name} - ${p.player?.phone}' : 'Player ${p.playerId}', style: textTheme.bodyMedium),
                   value: selectedPlayers.contains(p),
                   onChanged: (_) => togglePlayerSelection(p),
                 ),

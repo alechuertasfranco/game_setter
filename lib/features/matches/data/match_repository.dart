@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:game_setter/core/db/database_service.dart';
 import 'package:game_setter/features/courts/domain/entities/court.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
@@ -10,7 +9,6 @@ class MatchRepository {
   Future<int> insertMatch(Match match) async {
     final db = await DatabaseService.instance.database;
     final id = await db.insert("matches", match.toMap());
-    debugPrint("Partido insertado con ID: $id");
     return id; // Devuelve el ID correcto generado por SQLite
   }
 
@@ -113,7 +111,7 @@ class MatchRepository {
     );
 
     return result.map((map) {
-      final player = map['name'] != null ? Player(id: map['player_id'] as String, name: map['name'] as String, phone: map['phone'] as String?) : null;
+      final player = map['name'] != null ? Player(id: map['player_id'] as int, name: map['name'] as String, phone: map['phone'] as String?) : null;
 
       return MatchPlayer.fromMap(map, player: player);
     }).toList();

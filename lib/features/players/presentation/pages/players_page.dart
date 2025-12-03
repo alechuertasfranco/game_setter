@@ -26,10 +26,31 @@ class _PlayersPageState extends State<PlayersPage> {
 
   Future<void> loadPlayers() async {
     final data = await PlayerRepository().getAllPlayers();
+
+    // Para cada jugador, obtener los deportes y generar el subtitle
+    for (var player in data) {
+      final sports = await PlayerRepository().getPlayerSports(player.id!);
+      final uniqueSports = sports.map((sp) => sp['sport_name'] as String?).where((name) => name != null && name.trim().isNotEmpty).toSet().toList();
+      player.subtitle = uniqueSports.isNotEmpty ? uniqueSports.join(" - ") : player.phone ?? "Sin teléfono";
+    }
+
     setState(() {
       players = data;
       isLoading = false;
     });
+  }
+
+  void handleReorderPlayers(int oldIndex, int newIndex) async {
+    if (newIndex > oldIndex) newIndex -= 1;
+    final movedPlayer = players.removeAt(oldIndex);
+    players.insert(newIndex, movedPlayer);
+    setState(() {});
+
+    for (int i = 0; i < players.length; i++) {
+      if (players[i].id == null) continue;
+      await PlayerRepository().updatePlayerPosition(players[i].id!, i);
+      players[i] = players[i].copyWith(position: i);
+    }
   }
 
   void goToAddPlayer() async {
@@ -44,7 +65,7 @@ class _PlayersPageState extends State<PlayersPage> {
     final contacts = await showImportContactsSheet(context);
     if (contacts != null && contacts.isNotEmpty) {
       for (var c in contacts) {
-        final newPlayer = Player(id: DateTime.now().millisecondsSinceEpoch.toString(), name: c['name']!, phone: c['phone']);
+        final newPlayer = Player(name: c['name']!, phone: c['phone']);
         await PlayerRepository().insertPlayerOnly(newPlayer);
       }
       loadPlayers();
@@ -93,14 +114,13 @@ class _PlayersPageState extends State<PlayersPage> {
           : players.isEmpty
           ? Center(child: Text('No hay jugadores aún', style: textTheme.bodyLarge))
           : SafeArea(
-              child: ListView.builder(
+              child: ReorderableListView.builder(
                 padding: const EdgeInsets.all(12).copyWith(bottom: 48),
                 itemCount: players.length,
+                onReorder: handleReorderPlayers,
                 itemBuilder: (context, i) {
                   final p = players[i];
-                  return PlayerCard(player: p).onCardAction(() {
-                    loadPlayers();
-                  });
+                  return PlayerCard(player: p).onCardAction(key: ValueKey(p.id), fn: loadPlayers);
                 },
               ),
             ),

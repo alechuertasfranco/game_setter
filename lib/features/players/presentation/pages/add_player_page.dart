@@ -14,11 +14,12 @@ class AddPlayerPage extends StatelessWidget {
           await PlayerRepository().insertPlayerOnly(player);
           for (final sportId in sports) {
             final posSet = positionsBySport[sportId];
+            if (player.id == null) return;
             if (posSet == null || posSet.isEmpty) {
-              await PlayerRepository().assignSportToPlayer(player.id, sportId, null);
+              await PlayerRepository().assignSportToPlayer(player.id!, sportId, null);
             } else {
               for (final posId in posSet) {
-                await PlayerRepository().assignSportToPlayer(player.id, sportId, posId);
+                await PlayerRepository().assignSportToPlayer(player.id!, sportId, posId);
               }
             }
           }

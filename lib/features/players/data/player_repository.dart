@@ -16,20 +16,25 @@ class PlayerRepository {
     await db.update("players", p.toMap(), where: "id = ?", whereArgs: [p.id]);
   }
 
+  Future<void> updatePlayerPosition(int playerId, int position) async {
+    final db = await DatabaseService.instance.database;
+    await db.update('players', {'position': position}, where: 'id = ?', whereArgs: [playerId]);
+  }
+
   /// Inserta deporte/posición para un jugador (puede tener varios)
-  Future<void> assignSportToPlayer(String playerId, int sportId, int? positionId) async {
+  Future<void> assignSportToPlayer(int playerId, int sportId, int? positionId) async {
     final db = await DatabaseService.instance.database;
     await db.insert("player_sports", {'player_id': playerId, 'sport_id': sportId, 'position_id': positionId});
   }
 
   /// Elimina TODAS las asignaciones deporte/posición del jugador
-  Future<void> clearPlayerSports(String playerId) async {
+  Future<void> clearPlayerSports(int playerId) async {
     final db = await DatabaseService.instance.database;
     await db.delete("player_sports", where: "player_id = ?", whereArgs: [playerId]);
   }
 
   /// Obtiene TODOS los deportes/posiciones de un jugador
-  Future<List<Map<String, dynamic>>> getPlayerSports(String playerId) async {
+  Future<List<Map<String, dynamic>>> getPlayerSports(int playerId) async {
     final db = await DatabaseService.instance.database;
 
     final result = await db.rawQuery(
@@ -50,10 +55,9 @@ class PlayerRepository {
     return result;
   }
 
-  /// Obtiene todos los jugadores
   Future<List<Player>> getAllPlayers() async {
     final db = await DatabaseService.instance.database;
-    final result = await db.query('players');
+    final result = await db.query('players', orderBy: 'position ASC, name ASC');
     return result.map((e) => Player.fromMap(e)).toList();
   }
 
@@ -71,7 +75,7 @@ class PlayerRepository {
     return result.map((e) => Position.fromMap(e)).toList();
   }
 
-  Future<void> deletePlayer(String playerId) async {
+  Future<void> deletePlayer(int playerId) async {
     final db = await DatabaseService.instance.database;
     await db.delete("player_sports", where: "player_id = ?", whereArgs: [playerId]);
     await db.delete("players", where: "id = ?", whereArgs: [playerId]);

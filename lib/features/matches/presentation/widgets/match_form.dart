@@ -266,11 +266,7 @@ class _MatchFormState extends State<MatchForm> {
                         final mp = matchPlayers[i];
 
                         // try to find player details in availablePlayers or show id
-                        final player = availablePlayers.firstWhere(
-                          (p) => p.id == mp.playerId,
-                          orElse: () => Player(id: mp.playerId, name: mp.playerId, phone: null),
-                        );
-
+                        final player = availablePlayers.firstWhere((p) => p.id == mp.playerId);
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 6),
                           child: ListTile(

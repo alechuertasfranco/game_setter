@@ -39,7 +39,8 @@ Future<void> showAddPlayersSheet({required BuildContext context, required int sp
           }
 
           void addPlayer(Player p) {
-            matchPlayers.add(MatchPlayer(id: 0, matchId: 0, playerId: p.id, attended: false, paid: false));
+            if (p.id == null) return;
+            matchPlayers.add(MatchPlayer(id: 0, matchId: 0, playerId: p.id!, attended: false, paid: false));
             modalSetState(() {});
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${p.name} agregado"), duration: const Duration(milliseconds: 500)));
           }

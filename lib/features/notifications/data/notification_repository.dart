@@ -4,7 +4,7 @@ class NotificationRepository {
   final DatabaseService _dbService = DatabaseService.instance;
 
   /// Inserta una nueva notificación
-  Future<int> insertNotification({int? matchId, String? playerId, int? courtId, required String type, required String message, String? timestamp}) async {
+  Future<int> insertNotification({int? matchId, int? playerId, int? courtId, required String type, required String message, String? timestamp}) async {
     final db = await _dbService.database;
 
     final now = timestamp ?? DateTime.now().toIso8601String();
@@ -27,7 +27,7 @@ class NotificationRepository {
   }
 
   /// Obtiene notificaciones por jugador
-  Future<List<Map<String, dynamic>>> getNotificationsByPlayer(String playerId) async {
+  Future<List<Map<String, dynamic>>> getNotificationsByPlayer(int playerId) async {
     final db = await _dbService.database;
     return db.query('notifications', where: 'player_id = ?', whereArgs: [playerId], orderBy: 'timestamp DESC');
   }

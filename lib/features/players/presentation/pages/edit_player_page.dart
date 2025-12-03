@@ -19,17 +19,17 @@ class _EditPlayerPageState extends State<EditPlayerPage> {
       body: PlayerForm(
         initialPlayer: widget.player,
         onSave: (p, sports, positionsBySport) async {
-          debugPrint("EditPlayerPage: onSave: ${p.toMap()}");
+          if (p.id == null) return;
           await PlayerRepository().updatePlayerOnly(p);
-          await PlayerRepository().clearPlayerSports(p.id);
+          await PlayerRepository().clearPlayerSports(p.id!);
 
           for (final sportId in sports) {
             final posSet = positionsBySport[sportId];
             if (posSet == null || posSet.isEmpty) {
-              await PlayerRepository().assignSportToPlayer(p.id, sportId, null);
+              await PlayerRepository().assignSportToPlayer(p.id!, sportId, null);
             } else {
               for (final posId in posSet) {
-                await PlayerRepository().assignSportToPlayer(p.id, sportId, posId);
+                await PlayerRepository().assignSportToPlayer(p.id!, sportId, posId);
               }
             }
           }

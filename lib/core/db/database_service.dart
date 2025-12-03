@@ -19,7 +19,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 4, // ⬅️ NUEVA VERSIÓN
+      version: 5, // ⬅️ NUEVA VERSIÓN
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -37,9 +37,10 @@ class DatabaseService {
     // PLAYERS
     await db.execute('''
       CREATE TABLE players (
-        id TEXT PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        phone TEXT
+        phone TEXT,
+        position INTEGER DEFAULT 0
       );
     ''');
 
@@ -58,7 +59,7 @@ class DatabaseService {
     await db.execute('''
       CREATE TABLE player_sports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        player_id TEXT NOT NULL,
+        player_id INTEGER NOT NULL,
         sport_id INTEGER NOT NULL,
         position_id INTEGER,
         FOREIGN KEY(player_id) REFERENCES players(id),
@@ -74,7 +75,8 @@ class DatabaseService {
         name TEXT NOT NULL,
         phone TEXT,
         location TEXT,
-        hourly_rate REAL
+        hourly_rate REAL,
+        position INTEGER DEFAULT 0
       );
     ''');
 
@@ -96,7 +98,7 @@ class DatabaseService {
       CREATE TABLE match_players (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         match_id INTEGER NOT NULL,
-        player_id TEXT NOT NULL,
+        player_id INTEGER NOT NULL,
         attended INTEGER DEFAULT 0,
         paid INTEGER DEFAULT 0,
         FOREIGN KEY(match_id) REFERENCES matches(id),
@@ -109,7 +111,7 @@ class DatabaseService {
       CREATE TABLE notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         match_id INTEGER,
-        player_id TEXT,
+        player_id INTEGER,
         court_id INTEGER,
         type TEXT NOT NULL, -- invitación, confirmación, cobro, reserva, info, general
         message TEXT NOT NULL,
@@ -144,23 +146,5 @@ class DatabaseService {
     await db.insert('positions', {'sport_id': basketId, 'name': 'Pívot', 'short_name': 'C'});
   }
 
-  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    // v3 → v4: agregar soporte para notificaciones
-    if (oldVersion < 4) {
-      await db.execute('''
-        CREATE TABLE notifications (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          match_id INTEGER,
-          player_id TEXT,
-          court_id INTEGER,
-          type TEXT NOT NULL,
-          message TEXT NOT NULL,
-          timestamp TEXT NOT NULL,
-          FOREIGN KEY(match_id) REFERENCES matches(id),
-          FOREIGN KEY(player_id) REFERENCES players(id),
-          FOREIGN KEY(court_id) REFERENCES courts(id)
-        );
-      ''');
-    }
-  }
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {}
 }
