@@ -49,14 +49,16 @@ class _CourtsPageState extends State<CourtsPage> {
   }
 
   void importContact() async {
-    final contact = await showImportContactsSheet(context);
-    if (contact != null) {
-      final newCourt = Court(name: contact['name']!, phone: contact['phone']);
-      await CourtRepository().insertCourt(newCourt);
+    final contacts = await showImportContactsSheet(context);
+    if (contacts != null && contacts.isNotEmpty) {
+      for (var c in contacts) {
+        final newCourt = Court(name: c['name']!, phone: c['phone']);
+        await CourtRepository().insertCourt(newCourt);
+      }
       loadCourts();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${contact['name']} importado")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${contacts.length} canchas importadas")));
     }
   }
 

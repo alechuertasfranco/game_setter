@@ -3,8 +3,8 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Muestra un Bottom Sheet con los contactos y devuelve
-/// el contacto seleccionado como Map {'name': nombre, 'phone': telefono}.
-Future<Map<String, String?>?> showImportContactsSheet(BuildContext context) async {
+/// los contactos seleccionados como List<Map {'name': nombre, 'phone': telefono}>.
+Future<List<Map<String, String?>>?> showImportContactsSheet(BuildContext context) async {
   // Pedir permiso
   final status = await Permission.contacts.request();
   if (!status.isGranted) {
@@ -35,9 +35,9 @@ Future<Map<String, String?>?> showImportContactsSheet(BuildContext context) asyn
 
   // Lista filtrada inicial
   List<Contact> filteredContacts = List.from(contacts);
+  Set<Contact> selectedContacts = {};
 
-  // Mostrar Bottom Sheet
-  return await showModalBottomSheet<Map<String, String?>>(
+  return await showModalBottomSheet<List<Map<String, String?>>>(
     context: context,
     isScrollControlled: true,
     builder: (ctx) {
@@ -50,29 +50,45 @@ Future<Map<String, String?>?> showImportContactsSheet(BuildContext context) asyn
             });
           }
 
+          void toggleSelection(Contact contact) {
+            modalSetState(() {
+              if (selectedContacts.contains(contact)) {
+                selectedContacts.remove(contact);
+              } else {
+                selectedContacts.add(contact);
+              }
+            });
+          }
+
+          void handleAdd() {
+            final result = selectedContacts.map((c) => {'name': c.displayName, 'phone': c.phones.isNotEmpty ? c.phones.first.number : null}).toList();
+            Navigator.pop(ctx, result);
+          }
+
           return SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("Selecciona un contacto", style: Theme.of(context).textTheme.titleMedium),
+                  Text("Selecciona contactos", style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
 
-                  // Input de búsqueda mejorado
+                  // Buscador
                   TextField(
                     onChanged: filterContacts,
                     decoration: InputDecoration(
                       hintText: 'Buscar contacto...',
                       prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       filled: true,
-                      fillColor: Colors.grey.shade100,
+                      fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                     ),
                   ),
-
                   const SizedBox(height: 12),
+
+                  // Lista de contactos
                   SizedBox(
                     height: MediaQuery.of(context).size.height * 0.55,
                     child: isLoading
@@ -84,22 +100,35 @@ Future<Map<String, String?>?> showImportContactsSheet(BuildContext context) asyn
                             itemBuilder: (context, i) {
                               final c = filteredContacts[i];
                               final phone = c.phones.isNotEmpty ? c.phones.first.number : null;
+                              final isSelected = selectedContacts.contains(c);
 
                               return ListTile(
                                 title: Text(c.displayName),
                                 subtitle: phone != null ? Text(phone) : null,
-                                trailing: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(ctx, {'name': c.displayName, 'phone': phone});
-                                  },
-                                  child: const Text("Seleccionar"),
+                                trailing: IconButton(
+                                  icon: Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? Colors.green : Colors.grey),
+                                  onPressed: () => toggleSelection(c),
                                 ),
+                                onTap: () => toggleSelection(c),
                               );
                             },
                           ),
                   ),
                   const SizedBox(height: 8),
-                  ElevatedButton(onPressed: () => Navigator.pop(ctx, null), child: const Text("Cerrar")),
+
+                  // Botones de acción
+                  Row(
+                    spacing: 12,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, null),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200),
+                        child: const Text("Cancelar", style: TextStyle(color: Colors.blueGrey)),
+                      ),
+                      ElevatedButton(onPressed: selectedContacts.isEmpty ? null : handleAdd, child: const Text("Agregar")),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                 ],
               ),

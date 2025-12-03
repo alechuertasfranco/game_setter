@@ -11,6 +11,8 @@ import 'package:game_setter/features/sports/data/sport_repository.dart';
 import 'package:game_setter/features/courts/data/court_repository.dart';
 import 'package:game_setter/features/players/data/player_repository.dart';
 
+import 'package:game_setter/features/matches/presentation/widgets/add_players_sheet.dart';
+
 typedef OnSaveMatch = Future<void> Function(Match match);
 
 class MatchForm extends StatefulWidget {
@@ -127,83 +129,13 @@ class _MatchFormState extends State<MatchForm> {
     }
   }
 
-  // Opens modal to add players filtered by sport, disables already added players
-  Future<void> _showAddPlayersSheet() async {
+  void _showAddPlayersSheet() async {
     if (selectedSportId == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Seleccione un deporte primero")));
       return;
     }
-
-    // ensure availablePlayers is loaded
-    setState(() {
-      isLoading = true;
-    });
-    availablePlayers = await playerRepository.getPlayersBySport(selectedSportId!);
-    setState(() {
-      isLoading = false;
-    });
-
-    if (!mounted) return;
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, modalSetState) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("Agregar jugadores", style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.6,
-                      child: availablePlayers.isEmpty
-                          ? const Center(child: Text("No hay jugadores disponibles"))
-                          : ListView.builder(
-                              itemCount: availablePlayers.length,
-                              itemBuilder: (context, i) {
-                                final p = availablePlayers[i];
-
-                                final alreadyAdded = matchPlayers.any((mp) => mp.playerId == p.id);
-
-                                return ListTile(
-                                  title: Text(p.name),
-                                  subtitle: p.phone != null ? Text(p.phone!) : null,
-                                  trailing: ElevatedButton(
-                                    onPressed: alreadyAdded
-                                        ? null
-                                        : () {
-                                            // add
-                                            setState(() {
-                                              matchPlayers.add(MatchPlayer(id: 0, matchId: widget.initialMatch?.id ?? 0, playerId: p.id, attended: false, paid: false));
-                                            });
-
-                                            // update modal UI
-                                            modalSetState(() {});
-
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${p.name} agregado"), duration: Duration(milliseconds: 500)));
-                                          },
-                                    child: Text(alreadyAdded ? "Agregado" : "Agregar"),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cerrar")),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+    await showAddPlayersSheet(context: context, sportId: selectedSportId!, playerRepository: playerRepository, matchPlayers: matchPlayers);
+    setState(() {});
   }
 
   void _toggleAttended(MatchPlayer mp) {

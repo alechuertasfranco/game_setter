@@ -40,23 +40,17 @@ class _PlayersPageState extends State<PlayersPage> {
     }
   }
 
-  void goToEditPlayer(Player p) async {
-    final updated = await Navigator.pushNamed(context, '/editPlayer', arguments: p);
-
-    if (updated == true) {
-      loadPlayers();
-    }
-  }
-
   void importContact() async {
-    final contact = await showImportContactsSheet(context);
-    if (contact != null) {
-      final newPlayer = Player(id: DateTime.now().millisecondsSinceEpoch.toString(), name: contact['name']!, phone: contact['phone']);
-      await PlayerRepository().insertPlayerOnly(newPlayer);
+    final contacts = await showImportContactsSheet(context);
+    if (contacts != null && contacts.isNotEmpty) {
+      for (var c in contacts) {
+        final newPlayer = Player(id: DateTime.now().millisecondsSinceEpoch.toString(), name: c['name']!, phone: c['phone']);
+        await PlayerRepository().insertPlayerOnly(newPlayer);
+      }
       loadPlayers();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${contact['name']} importado")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${contacts.length} contactos importados")));
     }
   }
 
@@ -100,7 +94,7 @@ class _PlayersPageState extends State<PlayersPage> {
           ? Center(child: Text('No hay jugadores aún', style: textTheme.bodyLarge))
           : SafeArea(
               child: ListView.builder(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12).copyWith(bottom: 48),
                 itemCount: players.length,
                 itemBuilder: (context, i) {
                   final p = players[i];
