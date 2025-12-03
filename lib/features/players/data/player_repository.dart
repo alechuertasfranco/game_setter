@@ -92,6 +92,7 @@ class PlayerRepository {
         INNER JOIN player_sports ps ON pl.id = ps.player_id
         WHERE ps.sport_id = ?
         GROUP BY pl.id
+        ORDER BY pl.position ASC, pl.name ASC
       ''',
       [sportId],
     );

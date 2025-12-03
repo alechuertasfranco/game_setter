@@ -69,9 +69,7 @@ class _MatchesPageState extends State<MatchesPage> {
                 itemCount: matches.length,
                 itemBuilder: (context, i) {
                   final m = matches[i];
-                  return MatchCard(match: m).onCardAction(() {
-                    loadMatches();
-                  });
+                  return MatchCard(match: m).onCardAction(loadMatches);
                 },
               ),
             ),

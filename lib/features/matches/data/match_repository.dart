@@ -47,36 +47,43 @@ class MatchRepository {
   }
 
   /// Obtiene todos los partidos con deporte, cancha y jugadores
+  /// Obtiene todos los partidos con deporte, cancha y jugadores, ordenando los players
   Future<List<Match>> getAllMatchesDetailed() async {
     final db = await DatabaseService.instance.database;
 
     // 1) Traer partidos con NOMBRE del deporte y NOMBRE de la cancha
-    final result = await db.rawQuery('''
-      SELECT m.*, s.name AS sport_name, c.name AS court_name
-      FROM matches m
-      INNER JOIN sports s ON m.sport_id = s.id
-      LEFT JOIN courts c ON m.court_id = c.id
-      ORDER BY m.date DESC, m.time DESC
+    final matchRows = await db.rawQuery('''
+    SELECT m.*, s.name AS sport_name, c.name AS court_name
+    FROM matches m
+    INNER JOIN sports s ON m.sport_id = s.id
+    LEFT JOIN courts c ON m.court_id = c.id
+    ORDER BY m.date DESC, m.time DESC
+  ''');
+
+    // 2) Traer todos los players relacionados, ya ordenados
+    final mpRows = await db.rawQuery('''
+      SELECT mp.*, pl.name AS player_name, pl.phone AS player_phone, pl.position AS player_position
+      FROM match_players mp
+      INNER JOIN players pl ON mp.player_id = pl.id
+      ORDER BY mp.match_id, mp.attended DESC, mp.paid ASC, pl.position ASC
     ''');
 
-    // 2) Traer todos los players relacionados, indexados por matchId
-    final mpRows = await db.rawQuery('SELECT * FROM match_players');
-
+    // 3) Agrupar los players por matchId
     final Map<int, List<MatchPlayer>> playersByMatch = {};
-
     for (final row in mpRows) {
       final mp = MatchPlayer.fromMap(row);
       playersByMatch.putIfAbsent(mp.matchId, () => []);
       playersByMatch[mp.matchId]!.add(mp);
     }
 
-    // 3) Ensamblar cada match con su lista de players
-    return result.map((e) {
-      final matchId = e['id'] as int;
+    // 4) Ensamblar cada match con su lista de players ya ordenados
+    final matches = matchRows.map((row) {
+      final matchId = row['id'] as int;
       final players = playersByMatch[matchId] ?? [];
-
-      return Match.fromMap(e, players: players);
+      return Match.fromMap(row, players: players);
     }).toList();
+
+    return matches;
   }
 
   /// Obtiene estadísticas usadas por MatchCard (confirmados, pagados)
