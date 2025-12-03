@@ -19,22 +19,12 @@ class _EditMatchPageState extends State<EditMatchPage> {
       body: MatchForm(
         initialMatch: widget.match,
         onSave: (m) async {
-          debugPrint("Actualizando partido ID=${m.id}, sportId=${m.sportId}, courtId=${m.courtId}, date=${m.date}, time=${m.time}");
-          debugPrint("Jugadores a asignar: ${m.players.map((e) => e.playerId).toList()}");
-
           final players = m.players;
           await MatchRepository().updateMatch(m);
-          debugPrint("Partido actualizado");
-
           await MatchRepository().clearMatchPlayers(m.id);
-          debugPrint("Jugadores previos limpiados");
-
           for (final player in players) {
-            debugPrint("Asignando jugador ${player.playerId} al partido ${m.id}");
             await MatchRepository().assignPlayerToMatch(m.id, player);
           }
-
-          debugPrint("Todos los jugadores asignados correctamente");
         },
       ),
     );

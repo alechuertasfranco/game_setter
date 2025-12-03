@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:game_setter/core/db/database_service.dart';
+import 'package:game_setter/features/courts/domain/entities/court.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/domain/entities/match_player.dart';
+import 'package:game_setter/features/players/domain/entities/player.dart';
 
 class MatchRepository {
   /// Inserta SOLO el partido, sin jugador
@@ -52,10 +54,7 @@ class MatchRepository {
 
     // 1) Traer partidos con NOMBRE del deporte y NOMBRE de la cancha
     final result = await db.rawQuery('''
-      SELECT 
-        m.*,
-        s.name AS sport_name,
-        c.name AS court_name
+      SELECT m.*, s.name AS sport_name, c.name AS court_name
       FROM matches m
       INNER JOIN sports s ON m.sport_id = s.id
       LEFT JOIN courts c ON m.court_id = c.id
@@ -101,23 +100,32 @@ class MatchRepository {
   }
 
   /// Lista jugadores asignados a un partido (join para detalle)
-  Future<List<Map<String, dynamic>>> getMatchPlayersDetailed(String matchId) async {
+  Future<List<MatchPlayer>> getMatchPlayersDetailed(int matchId) async {
     final db = await DatabaseService.instance.database;
 
     final result = await db.rawQuery(
       '''
-        SELECT mp.player_id,
-              mp.attended,
-              mp.paid,
-              p.name AS player_name,
-              p.phone AS player_phone
-        FROM match_players mp
-        LEFT JOIN players p ON mp.player_id = p.id
+        SELECT mp.id, mp.match_id, mp.player_id, mp.attended, mp.paid, p.name, p.phone
+        FROM match_players mp LEFT JOIN players p ON mp.player_id = p.id
         WHERE mp.match_id = ?
       ''',
       [matchId],
     );
 
-    return result;
+    return result.map((map) {
+      final player = map['name'] != null ? Player(id: map['player_id'] as String, name: map['name'] as String, phone: map['phone'] as String?) : null;
+
+      return MatchPlayer.fromMap(map, player: player);
+    }).toList();
+  }
+
+  /// Obtiene el Court asociado a un Match, puede ser null
+  Future<Court?> getCourt(int? courtId) async {
+    if (courtId == null) return null;
+    final db = await DatabaseService.instance.database;
+    final result = await db.query('courts', where: 'id = ?', whereArgs: [courtId], limit: 1);
+
+    if (result.isEmpty) return null;
+    return Court.fromMap(result.first);
   }
 }

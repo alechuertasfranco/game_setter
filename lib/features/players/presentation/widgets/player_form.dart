@@ -109,10 +109,11 @@ class _PlayerFormState extends State<PlayerForm> {
 
   Future<void> save() async {
     if (nameCtrl.text.trim().isEmpty) return;
-    final player =
-        widget.initialPlayer ??
-        Player(id: DateTime.now().millisecondsSinceEpoch.toString(), name: nameCtrl.text.trim(), phone: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim());
+    final player = (widget.initialPlayer != null)
+        ? widget.initialPlayer!.copyWith(name: nameCtrl.text.trim(), phone: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim())
+        : Player(id: DateTime.now().millisecondsSinceEpoch.toString(), name: nameCtrl.text.trim(), phone: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim());
 
+    debugPrint('PlayerForm: save: ${player.toMap()}');
     await widget.onSave(player, selectedSports, selectedPositionsBySport);
     if (!mounted) return;
     Navigator.pop(context, true);

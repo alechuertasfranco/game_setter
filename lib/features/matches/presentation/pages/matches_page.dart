@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:game_setter/features/matches/data/match_repository.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/presentation/widgets/match_card.dart';
@@ -58,15 +57,7 @@ class _MatchesPageState extends State<MatchesPage> {
         elevation: 4,
       ),
 
-      floatingActionButton: SpeedDial(
-        icon: Icons.add,
-        activeIcon: Icons.close,
-        overlayOpacity: 0.5,
-        spacing: 10,
-        children: [
-          SpeedDialChild(child: const Icon(Icons.sports, size: 20), label: 'Crear partido', labelStyle: textTheme.bodySmall, onTap: goToAddMatch, shape: const CircleBorder()),
-        ],
-      ),
+      floatingActionButton: FloatingActionButton(onPressed: goToAddMatch, tooltip: 'Crear partido', shape: const CircleBorder(), child: const Icon(Icons.add)),
 
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

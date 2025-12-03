@@ -15,4 +15,8 @@ class Player {
   factory Player.fromMap(Map<String, dynamic> map) {
     return Player(id: map['id'], name: map['name'], phone: map['phone'], sports: map['sports']);
   }
+
+  Player copyWith({String? name, String? phone, List<PlayerSport>? sports}) {
+    return Player(id: id, name: name ?? this.name, phone: phone ?? this.phone, sports: sports ?? this.sports);
+  }
 }

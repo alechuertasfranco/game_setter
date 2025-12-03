@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/data/match_repository.dart';
+import 'package:game_setter/features/notifications/presentarion/pages/send_notification_page.dart';
 import 'package:game_setter/features/sports/domain/entities/sport.dart';
 
 class MatchCard extends StatelessWidget {
@@ -46,38 +47,70 @@ class MatchCard extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               child: Sport.getIcon(match.sportName),
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: Text("Eliminar partido", style: textTheme.titleMedium),
-                    content: Text("¿Seguro que deseas eliminar este partido?", style: textTheme.bodyMedium),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text("Cancelar", style: textTheme.bodyMedium),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: Text("Eliminar", style: textTheme.bodyMedium?.copyWith(color: Colors.redAccent)),
-                      ),
-                    ],
-                  ),
-                );
+            trailing: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) async {
+                if (value == 'notify') {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => SendNotificationPage(match: match)));
+                } else if (value == 'delete') {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: Text("Eliminar partido", style: textTheme.titleMedium),
+                      content: Text("¿Seguro que deseas eliminar este partido?", style: textTheme.bodyMedium),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text("Cancelar", style: textTheme.bodyMedium),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text("Eliminar", style: textTheme.bodyMedium?.copyWith(color: Colors.redAccent)),
+                        ),
+                      ],
+                    ),
+                  );
 
-                if (confirm == true) {
-                  await MatchRepository().clearMatchPlayers(match.id);
-                  await MatchRepository().deleteMatch(match.id);
+                  if (confirm == true) {
+                    await MatchRepository().clearMatchPlayers(match.id);
+                    await MatchRepository().deleteMatch(match.id);
 
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Partido eliminado"), duration: Duration(milliseconds: 500)));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Partido eliminado"), duration: Duration(milliseconds: 500)));
+                    }
+
+                    if (onAction != null) onAction!();
                   }
-
-                  if (onAction != null) onAction!();
                 }
               },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'notify',
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // padding compacto
+                  child: SizedBox(
+                    child: Row(
+                      spacing: 12,
+                      children: [
+                        const Icon(Icons.notifications_outlined, color: Colors.orange, size: 20),
+                        Text('Notificación', style: textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: SizedBox(
+                    child: Row(
+                      spacing: 12,
+                      children: [
+                        const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                        Text('Eliminar', style: textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             onTap: () async {
               final updated = await Navigator.pushNamed(context, '/editMatch', arguments: match);

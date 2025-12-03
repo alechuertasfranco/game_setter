@@ -19,7 +19,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3, // ⬅️ NUEVA VERSIÓN
+      version: 4, // ⬅️ NUEVA VERSIÓN
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -78,7 +78,7 @@ class DatabaseService {
       );
     ''');
 
-    // MATCHES (nueva tabla)
+    // MATCHES
     await db.execute('''
       CREATE TABLE matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,7 +91,7 @@ class DatabaseService {
       );
     ''');
 
-    // PLAYERS PER MATCH (nueva tabla)
+    // PLAYERS PER MATCH
     await db.execute('''
       CREATE TABLE match_players (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,6 +101,22 @@ class DatabaseService {
         paid INTEGER DEFAULT 0,
         FOREIGN KEY(match_id) REFERENCES matches(id),
         FOREIGN KEY(player_id) REFERENCES players(id)
+      );
+    ''');
+
+    // NOTIFICATIONS
+    await db.execute('''
+      CREATE TABLE notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_id INTEGER,
+        player_id TEXT,
+        court_id INTEGER,
+        type TEXT NOT NULL, -- invitación, confirmación, cobro, reserva, info, general
+        message TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        FOREIGN KEY(match_id) REFERENCES matches(id),
+        FOREIGN KEY(player_id) REFERENCES players(id),
+        FOREIGN KEY(court_id) REFERENCES courts(id)
       );
     ''');
 
@@ -129,29 +145,20 @@ class DatabaseService {
   }
 
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    // v2 → v3: agregar soporte para partidos
-    if (oldVersion < 3) {
+    // v3 → v4: agregar soporte para notificaciones
+    if (oldVersion < 4) {
       await db.execute('''
-        CREATE TABLE matches (
+        CREATE TABLE notifications (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          sport_id INTEGER NOT NULL,
+          match_id INTEGER,
+          player_id TEXT,
           court_id INTEGER,
-          date TEXT,
-          time TEXT,
-          FOREIGN KEY(sport_id) REFERENCES sports(id),
-          FOREIGN KEY(court_id) REFERENCES courts(id)
-        );
-      ''');
-
-      await db.execute('''
-        CREATE TABLE match_players (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          match_id INTEGER NOT NULL,
-          player_id TEXT NOT NULL,
-          attended INTEGER DEFAULT 0,
-          paid INTEGER DEFAULT 0,
+          type TEXT NOT NULL,
+          message TEXT NOT NULL,
+          timestamp TEXT NOT NULL,
           FOREIGN KEY(match_id) REFERENCES matches(id),
-          FOREIGN KEY(player_id) REFERENCES players(id)
+          FOREIGN KEY(player_id) REFERENCES players(id),
+          FOREIGN KEY(court_id) REFERENCES courts(id)
         );
       ''');
     }

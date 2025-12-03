@@ -19,6 +19,7 @@ class _EditPlayerPageState extends State<EditPlayerPage> {
       body: PlayerForm(
         initialPlayer: widget.player,
         onSave: (p, sports, positionsBySport) async {
+          debugPrint("EditPlayerPage: onSave: ${p.toMap()}");
           await PlayerRepository().updatePlayerOnly(p);
           await PlayerRepository().clearPlayerSports(p.id);
 
