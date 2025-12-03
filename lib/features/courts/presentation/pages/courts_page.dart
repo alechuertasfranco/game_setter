@@ -26,24 +26,36 @@ class _CourtsPageState extends State<CourtsPage> {
 
   Future<void> loadCourts() async {
     final data = await CourtRepository().getAllCourts();
+    for (var court in data) {
+      court.subtitle = court.phone ?? "Sin teléfono";
+      if (court.location != null && court.location!.trim().isNotEmpty) {
+        court.subtitle = court.location!;
+      }
+    }
+
     setState(() {
       courts = data;
       isLoading = false;
     });
   }
 
+  void handleReorderCourts(int oldIndex, int newIndex) async {
+    if (newIndex > oldIndex) newIndex -= 1;
+    final movedCourt = courts.removeAt(oldIndex);
+    courts.insert(newIndex, movedCourt);
+    setState(() {});
+
+    for (int i = 0; i < courts.length; i++) {
+      if (courts[i].id == null) continue;
+      await CourtRepository().updateCourtPosition(courts[i].id!, i);
+      courts[i] = courts[i].copyWith(position: i);
+    }
+  }
+
   void goToAddCourt() async {
     final created = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddCourtPage()));
 
     if (created == true) {
-      loadCourts();
-    }
-  }
-
-  void goToEditCourt(Court c) async {
-    final updated = await Navigator.pushNamed(context, '/editCourt', arguments: c);
-
-    if (updated == true) {
       loadCourts();
     }
   }
@@ -94,14 +106,13 @@ class _CourtsPageState extends State<CourtsPage> {
           : courts.isEmpty
           ? Center(child: Text('No hay canchas aún', style: textTheme.bodyLarge))
           : SafeArea(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(12),
+              child: ReorderableListView.builder(
+                padding: const EdgeInsets.all(12).copyWith(bottom: 48),
                 itemCount: courts.length,
+                onReorder: handleReorderCourts,
                 itemBuilder: (context, i) {
                   final c = courts[i];
-                  return CourtCard(court: c).onCardAction(() {
-                    loadCourts();
-                  });
+                  return CourtCard(court: c).onCardAction(key: ValueKey(c.id), fn: loadCourts);
                 },
               ),
             ),
