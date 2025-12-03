@@ -33,6 +33,9 @@ Future<Map<String, String?>?> showImportContactsSheet(BuildContext context) asyn
 
   if (!context.mounted) return null;
 
+  // Lista filtrada inicial
+  List<Contact> filteredContacts = List.from(contacts);
+
   // Mostrar Bottom Sheet
   return await showModalBottomSheet<Map<String, String?>>(
     context: context,
@@ -40,24 +43,46 @@ Future<Map<String, String?>?> showImportContactsSheet(BuildContext context) asyn
     builder: (ctx) {
       return StatefulBuilder(
         builder: (context, modalSetState) {
+          void filterContacts(String query) {
+            final lowerQuery = query.toLowerCase();
+            modalSetState(() {
+              filteredContacts = contacts.where((c) => c.displayName.toLowerCase().contains(lowerQuery)).toList();
+            });
+          }
+
           return SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text("Selecciona un contacto", style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
+
+                  // Input de búsqueda mejorado
+                  TextField(
+                    onChanged: filterContacts,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar contacto...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
                   SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.6,
+                    height: MediaQuery.of(context).size.height * 0.55,
                     child: isLoading
                         ? const Center(child: CircularProgressIndicator())
-                        : contacts.isEmpty
+                        : filteredContacts.isEmpty
                         ? const Center(child: Text("No hay contactos disponibles"))
                         : ListView.builder(
-                            itemCount: contacts.length,
+                            itemCount: filteredContacts.length,
                             itemBuilder: (context, i) {
-                              final c = contacts[i];
+                              final c = filteredContacts[i];
                               final phone = c.phones.isNotEmpty ? c.phones.first.number : null;
 
                               return ListTile(
