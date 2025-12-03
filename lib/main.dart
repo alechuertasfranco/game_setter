@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:game_setter/features/courts/domain/entities/court.dart';
+import 'package:game_setter/features/courts/presentation/pages/edit_court_page.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
 import 'package:game_setter/features/players/presentation/pages/edit_player_page.dart';
 import 'features/home/presentation/home_page.dart';
@@ -19,7 +21,7 @@ class GameSetterApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         textTheme: TextTheme(
           // Títulos grandes (pantallas, headers principales)
           displayLarge: GoogleFonts.montserrat(fontWeight: FontWeight.w700, fontSize: 36), // Uso: Splash screens, landing principal
@@ -48,6 +50,10 @@ class GameSetterApp extends StatelessWidget {
         if (settings.name == '/editPlayer') {
           final player = settings.arguments as Player;
           return MaterialPageRoute(builder: (_) => EditPlayerPage(player: player));
+        }
+        if (settings.name == '/editCourt') {
+          final court = settings.arguments as Court;
+          return MaterialPageRoute(builder: (_) => EditCourtPage(court: court));
         }
 
         // Fallback

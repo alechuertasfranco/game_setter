@@ -17,7 +17,7 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB, onUpgrade: _upgradeDB);
+    return await openDatabase(path, version: 2, onCreate: _createDB, onUpgrade: _upgradeDB);
   }
 
   Future _createDB(Database db, int version) async {
@@ -58,7 +58,18 @@ class DatabaseService {
       );
     ''');
 
-    // Seed initial sports
+    // Nueva tabla de canchas
+    await db.execute('''
+      CREATE TABLE courts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT,
+        location TEXT,
+        hourly_rate REAL
+      );
+    ''');
+
+    // Seed de deportes iniciales
     int voleyId = await db.insert('sports', {'name': 'Vóley'});
     int futbolId = await db.insert('sports', {'name': 'Fútbol'});
     int basketId = await db.insert('sports', {'name': 'Básquet'});
@@ -85,9 +96,17 @@ class DatabaseService {
   }
 
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    // Aquí agregaremos migraciones futuras
-    // v2 -> partidos
-    // v3 -> pagos
-    // etc.
+    // Migración para agregar canchas
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE courts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          phone TEXT,
+          location TEXT,
+          hourly_rate REAL
+        );
+      ''');
+    }
   }
 }

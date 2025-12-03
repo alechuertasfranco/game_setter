@@ -77,46 +77,42 @@ class _PlayersPageState extends State<PlayersPage> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFFE3F2FD), Color(0xFFFFFFFF)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Jugadores", style: textTheme.headlineSmall?.copyWith(color: Colors.white)),
+        backgroundColor: Colors.blueGrey,
+        elevation: 4,
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text("Jugadores", style: textTheme.headlineSmall),
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-        ),
-        floatingActionButton: SpeedDial(
-          icon: Icons.add,
-          activeIcon: Icons.close,
-          overlayOpacity: 0.5,
-          spacing: 10,
-          children: [
-            SpeedDialChild(
-              child: const Icon(Icons.contacts, size: 20),
-              label: 'Importar contacto',
-              labelStyle: textTheme.bodySmall,
-              onTap: importContact,
-              shape: const CircleBorder(),
-            ),
-            SpeedDialChild(
-              child: const Icon(Icons.person_add, size: 20),
-              label: 'Agregar jugador',
-              labelStyle: textTheme.bodySmall,
-              onTap: goToAddPlayer,
-              shape: const CircleBorder(),
-            ),
-          ],
-        ),
 
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : players.isEmpty
-            ? Center(child: Text('No hay jugadores aún', style: textTheme.bodyLarge))
-            : ListView.builder(
+      floatingActionButton: SpeedDial(
+        icon: Icons.add,
+        activeIcon: Icons.close,
+        overlayOpacity: 0.5,
+        spacing: 10,
+        children: [
+          SpeedDialChild(
+            child: const Icon(Icons.contacts, size: 20),
+            label: 'Importar contacto',
+            labelStyle: textTheme.bodySmall,
+            onTap: importContact,
+            shape: const CircleBorder(),
+          ),
+          SpeedDialChild(
+            child: const Icon(Icons.person_add, size: 20),
+            label: 'Agregar jugador',
+            labelStyle: textTheme.bodySmall,
+            onTap: goToAddPlayer,
+            shape: const CircleBorder(),
+          ),
+        ],
+      ),
+
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : players.isEmpty
+          ? Center(child: Text('No hay jugadores aún', style: textTheme.bodyLarge))
+          : SafeArea(
+              child: ListView.builder(
                 padding: const EdgeInsets.all(12),
                 itemCount: players.length,
                 itemBuilder: (context, i) {
@@ -126,7 +122,7 @@ class _PlayersPageState extends State<PlayersPage> {
                   });
                 },
               ),
-      ),
+            ),
     );
   }
 }

@@ -39,9 +39,9 @@ class PlayerCard extends StatelessWidget {
             title: Text(player.name, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             subtitle: Text(subtitle, style: textTheme.bodyMedium?.copyWith(color: Colors.grey[700])),
             leading: Container(
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.teal.withValues(alpha: 0.1)),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.green.withValues(alpha: 0.12)),
               padding: const EdgeInsets.all(8),
-              child: const Icon(Icons.person, color: Colors.teal, size: 28),
+              child: const Icon(Icons.person, color: Colors.green, size: 28),
             ),
             trailing: IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
