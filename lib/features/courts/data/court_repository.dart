@@ -31,10 +31,7 @@ class CourtRepository {
   Future<Court?> getCourtById(int id) async {
     final db = await DatabaseService.instance.database;
     final result = await db.query("courts", where: "id = ?", whereArgs: [id], limit: 1);
-
-    if (result.isNotEmpty) {
-      return Court.fromMap(result.first);
-    }
+    if (result.isNotEmpty) return Court.fromMap(result.first);
     return null;
   }
 }

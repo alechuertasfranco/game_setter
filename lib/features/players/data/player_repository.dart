@@ -76,4 +76,22 @@ class PlayerRepository {
     await db.delete("player_sports", where: "player_id = ?", whereArgs: [playerId]);
     await db.delete("players", where: "id = ?", whereArgs: [playerId]);
   }
+
+  /// Obtiene todos los jugadores que practican un deporte
+  Future<List<Player>> getPlayersBySport(int sportId) async {
+    final db = await DatabaseService.instance.database;
+
+    final result = await db.rawQuery(
+      '''
+        SELECT pl.*
+        FROM players pl
+        INNER JOIN player_sports ps ON pl.id = ps.player_id
+        WHERE ps.sport_id = ?
+        GROUP BY pl.id
+      ''',
+      [sportId],
+    );
+
+    return result.map((e) => Player.fromMap(e)).toList();
+  }
 }

@@ -3,6 +3,8 @@ import 'package:game_setter/features/courts/domain/entities/court.dart';
 import 'package:game_setter/features/courts/presentation/pages/edit_court_page.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
 import 'package:game_setter/features/players/presentation/pages/edit_player_page.dart';
+import 'package:game_setter/features/matches/domain/entities/match.dart';
+import 'package:game_setter/features/matches/presentation/pages/edit_match_page.dart';
 import 'features/home/presentation/home_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -54,6 +56,10 @@ class GameSetterApp extends StatelessWidget {
         if (settings.name == '/editCourt') {
           final court = settings.arguments as Court;
           return MaterialPageRoute(builder: (_) => EditCourtPage(court: court));
+        }
+        if (settings.name == '/editMatch') {
+          final match = settings.arguments as Match;
+          return MaterialPageRoute(builder: (_) => EditMatchPage(match: match));
         }
 
         // Fallback

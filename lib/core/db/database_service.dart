@@ -17,10 +17,16 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 2, onCreate: _createDB, onUpgrade: _upgradeDB);
+    return await openDatabase(
+      path,
+      version: 3, // ⬅️ NUEVA VERSIÓN
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
   }
 
   Future _createDB(Database db, int version) async {
+    // SPORTS
     await db.execute('''
       CREATE TABLE sports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,6 +34,7 @@ class DatabaseService {
       );
     ''');
 
+    // PLAYERS
     await db.execute('''
       CREATE TABLE players (
         id TEXT PRIMARY KEY,
@@ -36,6 +43,7 @@ class DatabaseService {
       );
     ''');
 
+    // POSITIONS
     await db.execute('''
       CREATE TABLE positions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,6 +54,7 @@ class DatabaseService {
       );
     ''');
 
+    // PLAYER-SPORTS RELS
     await db.execute('''
       CREATE TABLE player_sports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,7 +67,7 @@ class DatabaseService {
       );
     ''');
 
-    // Nueva tabla de canchas
+    // COURTS
     await db.execute('''
       CREATE TABLE courts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,25 +78,49 @@ class DatabaseService {
       );
     ''');
 
-    // Seed de deportes iniciales
+    // MATCHES (nueva tabla)
+    await db.execute('''
+      CREATE TABLE matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sport_id INTEGER NOT NULL,
+        court_id INTEGER,
+        date TEXT,
+        time TEXT,
+        FOREIGN KEY(sport_id) REFERENCES sports(id),
+        FOREIGN KEY(court_id) REFERENCES courts(id)
+      );
+    ''');
+
+    // PLAYERS PER MATCH (nueva tabla)
+    await db.execute('''
+      CREATE TABLE match_players (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_id INTEGER NOT NULL,
+        player_id TEXT NOT NULL,
+        attended INTEGER DEFAULT 0,
+        paid INTEGER DEFAULT 0,
+        FOREIGN KEY(match_id) REFERENCES matches(id),
+        FOREIGN KEY(player_id) REFERENCES players(id)
+      );
+    ''');
+
+    // SEED INITIAL SPORTS
     int voleyId = await db.insert('sports', {'name': 'Vóley'});
     int futbolId = await db.insert('sports', {'name': 'Fútbol'});
     int basketId = await db.insert('sports', {'name': 'Básquet'});
 
-    // Positions: Vóley
+    // POSITIONS SEED
     await db.insert('positions', {'sport_id': voleyId, 'name': 'Armador', 'short_name': 'ARM'});
     await db.insert('positions', {'sport_id': voleyId, 'name': 'Opuesto', 'short_name': 'OP'});
     await db.insert('positions', {'sport_id': voleyId, 'name': 'Punta', 'short_name': 'PTA'});
     await db.insert('positions', {'sport_id': voleyId, 'name': 'Central', 'short_name': 'CTR'});
     await db.insert('positions', {'sport_id': voleyId, 'name': 'Libero', 'short_name': 'LIB'});
 
-    // Positions: Fútbol
     await db.insert('positions', {'sport_id': futbolId, 'name': 'Arquero', 'short_name': 'GK'});
     await db.insert('positions', {'sport_id': futbolId, 'name': 'Defensa', 'short_name': 'DEF'});
     await db.insert('positions', {'sport_id': futbolId, 'name': 'Mediocampista', 'short_name': 'MID'});
     await db.insert('positions', {'sport_id': futbolId, 'name': 'Delantero', 'short_name': 'DEL'});
 
-    // Positions: Básquet
     await db.insert('positions', {'sport_id': basketId, 'name': 'Base', 'short_name': 'PG'});
     await db.insert('positions', {'sport_id': basketId, 'name': 'Escolta', 'short_name': 'SG'});
     await db.insert('positions', {'sport_id': basketId, 'name': 'Alero', 'short_name': 'SF'});
@@ -96,15 +129,29 @@ class DatabaseService {
   }
 
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    // Migración para agregar canchas
-    if (oldVersion < 2) {
+    // v2 → v3: agregar soporte para partidos
+    if (oldVersion < 3) {
       await db.execute('''
-        CREATE TABLE courts (
+        CREATE TABLE matches (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          phone TEXT,
-          location TEXT,
-          hourly_rate REAL
+          sport_id INTEGER NOT NULL,
+          court_id INTEGER,
+          date TEXT,
+          time TEXT,
+          FOREIGN KEY(sport_id) REFERENCES sports(id),
+          FOREIGN KEY(court_id) REFERENCES courts(id)
+        );
+      ''');
+
+      await db.execute('''
+        CREATE TABLE match_players (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          match_id INTEGER NOT NULL,
+          player_id TEXT NOT NULL,
+          attended INTEGER DEFAULT 0,
+          paid INTEGER DEFAULT 0,
+          FOREIGN KEY(match_id) REFERENCES matches(id),
+          FOREIGN KEY(player_id) REFERENCES players(id)
         );
       ''');
     }
