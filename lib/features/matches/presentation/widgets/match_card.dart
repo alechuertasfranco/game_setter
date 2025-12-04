@@ -67,7 +67,7 @@ class MatchCard extends StatelessWidget {
         final subtitle = "$attended confirmados - $paid pagados";
 
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: const EdgeInsets.symmetric(vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 3,
           shadowColor: Colors.black26,

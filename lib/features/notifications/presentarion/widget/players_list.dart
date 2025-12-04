@@ -19,7 +19,7 @@ class PlayersList extends StatelessWidget {
     if (type == 'Reserva' && matchCourt != null) {
       return ListTile(
         leading: const Icon(Icons.location_on, size: 20),
-        title: Text('Cancha: ${matchCourt!.name}', style: textTheme.bodyMedium),
+        title: Text('Cancha: ${matchCourt!.name}', style: textTheme.bodyLarge),
       );
     }
 
@@ -38,8 +38,8 @@ class PlayersList extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
                   visualDensity: VisualDensity.compact,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                  title: Text(p.player?.name ?? 'Player ${p.playerId}', style: textTheme.bodyMedium),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  title: Text(p.player?.name ?? 'Player ${p.playerId}', style: textTheme.bodyLarge),
                   subtitle: phone != null ? Text(phone, style: textTheme.bodySmall) : null,
                   trailing: IconButton(
                     icon: Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, color: isSelected ? Colors.green : Colors.grey, size: 20),

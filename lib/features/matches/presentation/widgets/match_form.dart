@@ -30,20 +30,14 @@ class _MatchFormState extends State<MatchForm> {
   final CourtRepository courtRepository = CourtRepository();
   final PlayerRepository playerRepository = PlayerRepository();
 
-  // Form controllers / state
   int? selectedSportId;
-  List<Sport> sports = [];
-
   int? selectedCourtId;
+  String? date;
+  String? time;
+
+  List<Sport> sports = [];
   List<Court> courts = [];
-
-  String? date; // YYYY-MM-DD
-  String? time; // HH:mm
-
-  // Available players filtered by sport
   List<Player> availablePlayers = [];
-
-  // Players added to the match (keeps attended/paid flags)
   final List<MatchPlayer> matchPlayers = [];
 
   bool isLoading = true;
@@ -54,54 +48,53 @@ class _MatchFormState extends State<MatchForm> {
     _initForm();
   }
 
+  /// ----------------------------
+  /// INIT
+  /// ----------------------------
   Future<void> _initForm() async {
     sports = await sportRepository.getSports();
     courts = await courtRepository.getAllCourts();
 
-    if (widget.initialMatch != null) {
-      final m = widget.initialMatch!;
-      selectedSportId = m.sportId;
-      selectedCourtId = m.courtId;
-      date = m.date;
-      time = m.time;
+    final initial = widget.initialMatch;
+    if (initial != null) {
+      selectedSportId = initial.sportId;
+      selectedCourtId = initial.courtId;
+      date = initial.date;
+      time = initial.time;
+      matchPlayers.addAll(initial.players);
 
-      // copy initial players if present
-      matchPlayers.clear();
-      matchPlayers.addAll(m.players);
-
-      // load available players for the sport
       if (selectedSportId != null) {
         availablePlayers = await playerRepository.getPlayersBySport(selectedSportId!);
       }
     }
 
-    setState(() {
-      isLoading = false;
-    });
+    setState(() => isLoading = false);
   }
 
-  Future<void> _onSportChanged(int? sportId) async {
-    if (sportId == null) return;
-    // change sport => clear players selection by default
+  /// ----------------------------
+  /// HELPERS
+  /// ----------------------------
+  Future<void> _onSportChanged(int? id) async {
+    if (id == null) return;
+
     setState(() {
-      selectedSportId = sportId;
+      selectedSportId = id;
       selectedCourtId = null;
       matchPlayers.clear();
       availablePlayers = [];
       isLoading = true;
     });
 
-    availablePlayers = await playerRepository.getPlayersBySport(sportId);
-
-    setState(() {
-      isLoading = false;
-    });
+    availablePlayers = await playerRepository.getPlayersBySport(id);
+    setState(() => isLoading = false);
   }
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final initial = date != null ? DateTime.tryParse(date!) ?? now : now;
+
     final picked = await showDatePicker(context: context, initialDate: initial, firstDate: DateTime(now.year - 5), lastDate: DateTime(now.year + 5));
+
     if (picked != null) {
       setState(() {
         date = DateFormat('yyyy-MM-dd').format(picked);
@@ -111,21 +104,19 @@ class _MatchFormState extends State<MatchForm> {
 
   Future<void> _pickTime() async {
     final now = TimeOfDay.now();
+
     TimeOfDay initial = now;
     if (time != null) {
       final parts = time!.split(':');
-      if (parts.length >= 2) {
-        final h = int.tryParse(parts[0]) ?? now.hour;
-        final m = int.tryParse(parts[1]) ?? now.minute;
-        initial = TimeOfDay(hour: h, minute: m);
+      if (parts.length == 2) {
+        initial = TimeOfDay(hour: int.tryParse(parts[0]) ?? now.hour, minute: int.tryParse(parts[1]) ?? now.minute);
       }
     }
+
     final picked = await showTimePicker(context: context, initialTime: initial);
+
     if (picked != null) {
-      final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-      setState(() {
-        time = formatted;
-      });
+      setState(() => time = "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}");
     }
   }
 
@@ -138,19 +129,15 @@ class _MatchFormState extends State<MatchForm> {
     setState(() {});
   }
 
-  void _toggleAttended(MatchPlayer mp) {
-    final idx = matchPlayers.indexWhere((e) => e.playerId == mp.playerId);
-    if (idx == -1) return;
-    final existing = matchPlayers[idx];
-    matchPlayers[idx] = existing.copyWith(attended: !existing.attended);
-    setState(() {});
-  }
+  void _toggleAttended(MatchPlayer mp) => _updatePlayer(mp, attended: !mp.attended);
+  void _togglePaid(MatchPlayer mp) => _updatePlayer(mp, paid: !mp.paid);
 
-  void _togglePaid(MatchPlayer mp) {
-    final idx = matchPlayers.indexWhere((e) => e.playerId == mp.playerId);
-    if (idx == -1) return;
-    final existing = matchPlayers[idx];
-    matchPlayers[idx] = existing.copyWith(paid: !existing.paid);
+  void _updatePlayer(MatchPlayer mp, {bool? attended, bool? paid}) {
+    final i = matchPlayers.indexWhere((e) => e.playerId == mp.playerId);
+    if (i == -1) return;
+
+    matchPlayers[i] = matchPlayers[i].copyWith(attended: attended ?? matchPlayers[i].attended, paid: paid ?? matchPlayers[i].paid);
+
     setState(() {});
   }
 
@@ -159,15 +146,17 @@ class _MatchFormState extends State<MatchForm> {
     setState(() {});
   }
 
+  /// ----------------------------
+  /// SAVE MATCH
+  /// ----------------------------
   Future<void> _save() async {
     if (selectedSportId == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Seleccione un deporte")));
       return;
     }
 
-    final id = widget.initialMatch?.id ?? 0;
     final match = Match(
-      id: id,
+      id: widget.initialMatch?.id ?? 0,
       sportId: selectedSportId!,
       courtId: selectedCourtId,
       date: date,
@@ -182,70 +171,150 @@ class _MatchFormState extends State<MatchForm> {
     Navigator.pop(context, true);
   }
 
+  /// ----------------------------
+  /// UI BUILD HELPERS
+  /// ----------------------------
+  Widget _buildDropdown<T>({required T? value, required String label, required List<DropdownMenuItem<T>> items, required Function(T?) onChanged}) {
+    return DropdownButtonFormField<T>(
+      initialValue: value,
+      decoration: InputDecoration(labelText: label),
+      items: items,
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildDateField({required String label, required String? value, required VoidCallback onTap}) {
+    return TextFormField(
+      readOnly: true,
+      controller: TextEditingController(text: value ?? ''),
+      decoration: InputDecoration(labelText: label),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildSwipeBackground(Color color, Alignment align, IconData icon) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        color: color,
+        alignment: align,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Icon(icon, color: Colors.white),
+      ),
+    );
+  }
+
+  Future<bool?> _handleDismiss(MatchPlayer mp, Player player, TextTheme theme, DismissDirection direction) async {
+    if (direction == DismissDirection.startToEnd) {
+      _toggleAttended(mp);
+      return false;
+    }
+
+    if (direction == DismissDirection.endToStart) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Quitar jugador", style: theme.titleMedium),
+          content: Text("¿Seguro que deseas quitar a ${player.name} del partido?", style: theme.bodyMedium),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancelar")),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Quitar", style: TextStyle(color: Colors.redAccent)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true) _removePlayer(mp);
+      return confirm;
+    }
+
+    return false;
+  }
+
+  Widget _buildPlayerTile(MatchPlayer mp, Player p, TextTheme theme) {
+    return Card(
+      margin: const EdgeInsets.all(0),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        leading: Container(
+          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withAlpha(12)),
+          padding: const EdgeInsets.all(8),
+          child: const Icon(Icons.person, color: Colors.blue, size: 28),
+        ),
+        title: Text(p.name, style: theme.bodyLarge),
+        subtitle: p.phone != null ? Text(p.phone!) : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.check_circle, color: mp.attended ? Colors.green : Colors.grey),
+              onPressed: () => _toggleAttended(mp),
+            ),
+            IconButton(
+              icon: Icon(Icons.attach_money, color: mp.paid ? Colors.blue : Colors.grey),
+              onPressed: () => _togglePaid(mp),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ----------------------------
+  /// BUILD
+  /// ----------------------------
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     if (isLoading) return const Center(child: CircularProgressIndicator());
 
+    final theme = Theme.of(context).textTheme;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.all(24),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sport selector
-            DropdownButtonFormField<int?>(
-              initialValue: selectedSportId,
-              decoration: const InputDecoration(labelText: "Deporte"),
+            _buildDropdown<int?>(
+              value: selectedSportId,
+              label: "Deporte",
               items: [
-                const DropdownMenuItem<int?>(value: null, child: Text("Seleccionar deporte")),
-                ...sports.map((s) => DropdownMenuItem<int?>(value: s.id, child: Text(s.name))),
+                const DropdownMenuItem(value: null, child: Text("Seleccionar deporte")),
+                ...sports.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
               ],
               onChanged: (v) async => await _onSportChanged(v),
             ),
 
             const SizedBox(height: 12),
 
-            // Date & Time row
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
-                    readOnly: true,
-                    controller: TextEditingController(text: date ?? ''),
-                    decoration: const InputDecoration(labelText: "Fecha"),
-                    onTap: _pickDate,
-                  ),
+                  child: _buildDateField(label: "Fecha", value: date, onTap: _pickDate),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: TextFormField(
-                    readOnly: true,
-                    controller: TextEditingController(text: time ?? ''),
-                    decoration: const InputDecoration(labelText: "Hora"),
-                    onTap: _pickTime,
-                  ),
+                  child: _buildDateField(label: "Hora", value: time, onTap: _pickTime),
                 ),
               ],
             ),
 
             const SizedBox(height: 12),
 
-            // Court selector
-            DropdownButtonFormField<int?>(
-              initialValue: selectedCourtId,
-              decoration: const InputDecoration(labelText: "Cancha"),
+            _buildDropdown<int?>(
+              value: selectedCourtId,
+              label: "Cancha",
               items: [
-                const DropdownMenuItem<int?>(value: null, child: Text("Seleccionar cancha")),
-                ...courts.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text(c.name))),
+                const DropdownMenuItem(value: null, child: Text("Seleccionar cancha")),
+                ...courts.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
               ],
               onChanged: (v) => setState(() => selectedCourtId = v),
             ),
 
             const SizedBox(height: 16),
 
-            // Add players button
             Row(
               children: [
                 Expanded(
@@ -256,57 +325,30 @@ class _MatchFormState extends State<MatchForm> {
 
             const SizedBox(height: 12),
 
-            // Players list
             Expanded(
               child: matchPlayers.isEmpty
                   ? const Center(child: Text("No hay jugadores agregados"))
                   : ListView.builder(
                       itemCount: matchPlayers.length,
-                      itemBuilder: (context, i) {
+                      itemBuilder: (_, i) {
                         final mp = matchPlayers[i];
+                        final p = availablePlayers.firstWhere((x) => x.id == mp.playerId);
 
-                        // try to find player details in availablePlayers or show id
-                        final player = availablePlayers.firstWhere((p) => p.id == mp.playerId);
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                            title: Text(player.name, style: textTheme.bodyLarge),
-                            subtitle: player.phone != null ? Text(player.phone!, style: textTheme.bodyMedium) : null,
-                            leading: Container(
-                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withAlpha(12)),
-                              padding: const EdgeInsets.all(8),
-                              child: const Icon(Icons.person, color: Colors.blue, size: 28),
-                            ),
-
-                            // Attendance & Paid icons
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Attended toggle (green)
-                                IconButton(
-                                  icon: Icon(Icons.check_circle, color: mp.attended ? Colors.green : Colors.grey),
-                                  onPressed: () => _toggleAttended(mp),
-                                ),
-                                // Paid toggle (blue)
-                                IconButton(
-                                  icon: Icon(Icons.attach_money, color: mp.paid ? Colors.blue : Colors.grey),
-                                  onPressed: () => _togglePaid(mp),
-                                ),
-                                // Remove player
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                  onPressed: () => _removePlayer(mp),
-                                ),
-                              ],
-                            ),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Dismissible(
+                            key: ValueKey("mp_${mp.playerId}"),
+                            direction: DismissDirection.horizontal,
+                            confirmDismiss: (dir) => _handleDismiss(mp, p, theme, dir),
+                            background: _buildSwipeBackground(Colors.blue, Alignment.centerLeft, Icons.check_circle),
+                            secondaryBackground: _buildSwipeBackground(Colors.redAccent, Alignment.centerRight, Icons.delete),
+                            child: _buildPlayerTile(mp, p, theme),
                           ),
                         );
                       },
                     ),
             ),
 
-            // Save button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(onPressed: _save, child: Text(widget.initialMatch == null ? "Guardar partido" : "Guardar cambios")),

@@ -46,6 +46,14 @@ class _NotificationFormState extends State<NotificationForm> {
     updateDefaultMessage();
   }
 
+  MatchPlayer? get nextPlayerToSend {
+    try {
+      return allPlayers.firstWhere((p) => selectedPlayers.contains(p));
+    } catch (_) {
+      return null;
+    }
+  }
+
   void updateRecipients([String? newType]) {
     String currentType = newType ?? type;
     List<MatchPlayer> initial = [];
@@ -104,24 +112,30 @@ class _NotificationFormState extends State<NotificationForm> {
     });
   }
 
-  Future<void> sendWhatsApp(BuildContext context, List<MatchPlayer> selectedPlayers, String message) async {
+  Future<void> sendSinglePlayerWhatsApp(BuildContext context) async {
+    final player = nextPlayerToSend;
+    if (player == null) return;
+    await sendWhatsApp(context, player, messageController.text);
+    setState(() {
+      selectedPlayers.remove(player);
+    });
+  }
+
+  Future<void> sendWhatsApp(BuildContext context, MatchPlayer selectedPlayer, String message) async {
     if (message.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ingrese un mensaje', style: Theme.of(context).textTheme.bodyMedium)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ingrese un mensaje', style: Theme.of(context).textTheme.bodyLarge)));
       return;
     }
 
     final pendingRecipients = <Map<String, dynamic>>[];
-
-    for (var player in selectedPlayers) {
-      pendingRecipients.add({'id': player.playerId, 'phone': player.player?.phone, 'name': player.player?.name, 'type': 'player'});
-    }
+    pendingRecipients.add({'id': selectedPlayer.playerId, 'phone': selectedPlayer.player?.phone, 'name': selectedPlayer.player?.name, 'type': 'player'});
 
     if (type == 'Reserva' && matchCourt != null && matchCourt?.phone != null && matchCourt!.phone!.isNotEmpty) {
       pendingRecipients.add({'id': null, 'phone': matchCourt!.phone, 'name': 'Cancha', 'type': 'court'});
     }
 
     if (pendingRecipients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No hay destinatarios con número de WhatsApp', style: Theme.of(context).textTheme.bodyMedium)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No hay destinatarios con número de WhatsApp', style: Theme.of(context).textTheme.bodyLarge)));
       return;
     }
 
@@ -150,7 +164,7 @@ class _NotificationFormState extends State<NotificationForm> {
             if (!context.mounted) return;
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(SnackBar(content: Text('No se pudo abrir WhatsApp para ${recipient['name'] ?? 'destinatario'}', style: Theme.of(context).textTheme.bodyMedium)));
+            ).showSnackBar(SnackBar(content: Text('No se pudo abrir WhatsApp para ${recipient['name'] ?? 'destinatario'}', style: Theme.of(context).textTheme.bodyLarge)));
           }
         }
       }
@@ -159,7 +173,7 @@ class _NotificationFormState extends State<NotificationForm> {
     }
 
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Notificación enviada por WhatsApp', style: Theme.of(context).textTheme.bodyMedium)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Notificación enviada por WhatsApp', style: Theme.of(context).textTheme.bodyLarge)));
   }
 
   NotificationType _mapStringToNotificationType(String type) {
@@ -189,7 +203,7 @@ class _NotificationFormState extends State<NotificationForm> {
       children: [
         DropdownButtonFormField<String>(
           initialValue: type,
-          decoration: InputDecoration(labelText: "Tipo de notificación", labelStyle: textTheme.bodyMedium),
+          decoration: InputDecoration(labelText: "Tipo de notificación", labelStyle: textTheme.bodyLarge),
           items: ['Invitación', 'Confirmación', 'Cobro', 'Reserva', 'Info', 'General']
               .map(
                 (t) => DropdownMenuItem(
@@ -211,14 +225,17 @@ class _NotificationFormState extends State<NotificationForm> {
             ],
           ),
         const SizedBox(height: 24),
-        Text('Destinatarios:', style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+        Text('Destinatarios:', style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
         Expanded(
           child: PlayersList(allPlayers: allPlayers, selectedPlayers: selectedPlayers, matchCourt: matchCourt, type: type, toggleSelection: togglePlayerSelection),
         ),
         const SizedBox(height: 12),
         MessageInput(controller: messageController),
         const SizedBox(height: 12),
-        NotificationButtons(onSendWhatsApp: () => sendWhatsApp(context, selectedPlayers, messageController.text)),
+        NotificationButtons(
+          onSendWhatsApp: () => sendSinglePlayerWhatsApp(context),
+          buttonLabel: nextPlayerToSend == null ? null : "Enviar WhatsApp a ${nextPlayerToSend!.player?.name}",
+        ),
       ],
     );
   }

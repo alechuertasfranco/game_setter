@@ -12,11 +12,11 @@ class MessageInput extends StatelessWidget {
     return TextField(
       controller: controller,
       maxLines: 5,
-      style: textTheme.bodyMedium,
+      style: textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: 'Mensaje',
-        labelStyle: textTheme.bodyMedium,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        labelStyle: textTheme.bodyLarge,
+        contentPadding: const EdgeInsets.all(12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Colors.grey),
