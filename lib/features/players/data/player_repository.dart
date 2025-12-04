@@ -5,9 +5,9 @@ import 'package:game_setter/features/sports/domain/entities/position.dart';
 
 class PlayerRepository {
   /// Inserta SOLO el jugador, sin deporte
-  Future<void> insertPlayerOnly(Player p) async {
+  Future<int> insertPlayerOnly(Player p) async {
     final db = await DatabaseService.instance.database;
-    await db.insert("players", p.toMap());
+    return await db.insert("players", p.toMap());
   }
 
   /// Actualiza SOLO los datos básicos del jugador

@@ -38,18 +38,20 @@ class _AddMatchTeamPageState extends State<AddMatchTeamPage> {
       appBar: AppBar(title: const Text("Agregar equipo")),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : MatchTeamForm(
-              match: widget.match,
-              availablePlayers: availablePlayers,
-              onSave: (MatchTeam team) async {
-                final repo = MatchTeamRepository();
-                final teamId = await repo.addTeam(team);
+          : SizedBox.expand(
+              child: MatchTeamForm(
+                match: widget.match,
+                availablePlayers: availablePlayers,
+                onSave: (MatchTeam team) async {
+                  final repo = MatchTeamRepository();
+                  final teamId = await repo.addTeam(team);
 
-                await repo.clearTeamPlayers(teamId);
-                for (final p in team.players) {
-                  await repo.addPlayerToTeam(teamId, p);
-                }
-              },
+                  await repo.clearTeamPlayers(teamId);
+                  for (final p in team.players) {
+                    await repo.addPlayerToTeam(teamId, p);
+                  }
+                },
+              ),
             ),
     );
   }

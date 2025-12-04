@@ -42,10 +42,8 @@ class _EditMatchTeamPageState extends State<EditMatchTeamPage> {
         initialMatchTeam: widget.team,
         onSave: (m) async {
           final repo = MatchTeamRepository();
-
           await repo.updateTeam(m);
           await repo.clearTeamPlayers(m.id!);
-
           for (final player in m.players) {
             await repo.addPlayerToTeam(m.id!, player);
           }

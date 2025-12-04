@@ -1,6 +1,8 @@
 import 'package:game_setter/core/db/database_service.dart';
 import 'package:game_setter/features/match_teams/domain/entities/match_team.dart';
 import 'package:game_setter/features/match_teams/domain/entities/match_team_player.dart';
+import 'package:game_setter/features/players/domain/entities/player.dart';
+import 'package:game_setter/features/sports/domain/entities/position.dart';
 
 class MatchTeamRepository {
   final db = DatabaseService.instance;
@@ -24,21 +26,6 @@ class MatchTeamRepository {
     await database.delete("match_teams", where: "id = ?", whereArgs: [teamId]);
   }
 
-  /// Obtiene los equipos de un match
-  Future<List<MatchTeam>> getTeamsByMatch(int matchId) async {
-    final database = await db.database;
-
-    final teamMaps = await database.query('match_teams', where: 'match_id = ?', whereArgs: [matchId]);
-    final List<MatchTeam> teams = [];
-
-    for (final t in teamMaps) {
-      final players = await getPlayersByTeam(t['id'] as int);
-      teams.add(MatchTeam.fromMap(t, players: players));
-    }
-
-    return teams;
-  }
-
   /// Limpia la tabla match_team_players para ese equipo
   Future<void> clearTeamPlayers(int teamId) async {
     final database = await db.database;
@@ -51,10 +38,72 @@ class MatchTeamRepository {
     await database.insert('match_team_players', player.copyWith(teamId: teamId).toMap());
   }
 
-  /// Obtener jugadores de un equipo
-  Future<List<MatchTeamPlayer>> getPlayersByTeam(int teamId) async {
+  /// ✅ MÉTODO UNIFICADO: Obtener equipos con sus jugadores en UNA sola operación
+  Future<MatchTeamsWithPlayers> getTeamsWithPlayersByMatch(int matchId) async {
     final database = await db.database;
-    final maps = await database.query('match_team_players', where: 'team_id = ?', whereArgs: [teamId]);
-    return maps.map((m) => MatchTeamPlayer.fromMap(m)).toList();
+    await Future.delayed(const Duration(milliseconds: 350));
+
+    // 1. Obtener equipos
+    final teamMaps = await database.query('match_teams', where: 'match_id = ?', whereArgs: [matchId]);
+
+    // 2. Obtener todos los jugadores de todos los equipos en UNA consulta
+    final playerMaps = await database.rawQuery(
+      '''
+        SELECT mtp.id AS mtp_id, mtp.team_id, mtp.player_id, mtp.position_id, mtp.slot,
+              p.name AS player_name, p.phone AS player_phone,
+              pos.name AS position_name, pos.short_name AS position_short_name, pos.sport_id AS position_sport_id
+        FROM match_team_players mtp
+        INNER JOIN match_teams mt ON mt.id = mtp.team_id
+        LEFT JOIN players p ON p.id = mtp.player_id
+        LEFT JOIN positions pos ON pos.id = mtp.position_id
+        WHERE mt.match_id = ?
+        ORDER BY mtp.team_id, mtp.slot
+      ''',
+      [matchId],
+    );
+
+    // 3. Agrupar jugadores por team_id
+    final Map<int, List<MatchTeamPlayer>> playersGrouped = {};
+    for (final m in playerMaps) {
+      final teamId = m['team_id'] as int;
+      final player = _buildMatchTeamPlayer(m);
+
+      if (!playersGrouped.containsKey(teamId)) {
+        playersGrouped[teamId] = [];
+      }
+      playersGrouped[teamId]!.add(player);
+    }
+
+    // 4. Crear equipos con sus jugadores
+    final teams = teamMaps.map((t) {
+      final teamId = t['id'] as int;
+      final players = playersGrouped[teamId] ?? [];
+      return MatchTeam.fromMap(t, players: players);
+    }).toList();
+
+    return MatchTeamsWithPlayers(teams: teams, playersGrouped: playersGrouped);
   }
+
+  /// Helper para construir MatchTeamPlayer desde un mapa
+  MatchTeamPlayer _buildMatchTeamPlayer(Map<String, dynamic> m) {
+    return MatchTeamPlayer(
+      id: m['mtp_id'] as int?,
+      teamId: m['team_id'] as int,
+      playerId: m['player_id'] as int,
+      player: m['player_id'] != null ? Player(id: m['player_id'] as int, name: m['player_name'] as String, phone: m['player_phone'] as String) : null,
+      positionId: m['position_id'] as int?,
+      slot: m['slot'] as int? ?? 1,
+      position: m['position_id'] != null
+          ? Position(id: m['position_id'] as int, sportId: m['position_sport_id'] as int, name: m['position_name'] as String, shortName: m['position_short_name'] as String)
+          : null,
+    );
+  }
+}
+
+/// ✅ Clase para retornar equipos y jugadores agrupados juntos
+class MatchTeamsWithPlayers {
+  final List<MatchTeam> teams;
+  final Map<int, List<MatchTeamPlayer>> playersGrouped;
+
+  MatchTeamsWithPlayers({required this.teams, required this.playersGrouped});
 }

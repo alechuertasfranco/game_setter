@@ -28,125 +28,126 @@ class DatabaseService {
   Future _createDB(Database db, int version) async {
     // --- TABLAS EXISTENTES ---
     await db.execute('''
-      CREATE TABLE sports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
-      );
-    ''');
+    CREATE TABLE sports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE players (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        phone TEXT,
-        position INTEGER DEFAULT 0
-      );
-    ''');
+    CREATE TABLE players (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT,
+      position INTEGER DEFAULT 0
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE positions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sport_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        short_name TEXT NOT NULL,
-        FOREIGN KEY(sport_id) REFERENCES sports(id)
-      );
-    ''');
+    CREATE TABLE positions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sport_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      short_name TEXT NOT NULL,
+      FOREIGN KEY(sport_id) REFERENCES sports(id) ON DELETE CASCADE
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE player_sports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        player_id INTEGER NOT NULL,
-        sport_id INTEGER NOT NULL,
-        position_id INTEGER,
-        FOREIGN KEY(player_id) REFERENCES players(id),
-        FOREIGN KEY(sport_id) REFERENCES sports(id),
-        FOREIGN KEY(position_id) REFERENCES positions(id)
-      );
-    ''');
+    CREATE TABLE player_sports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id INTEGER NOT NULL,
+      sport_id INTEGER NOT NULL,
+      position_id INTEGER,
+      FOREIGN KEY(player_id) REFERENCES players(id) ON DELETE CASCADE,
+      FOREIGN KEY(sport_id) REFERENCES sports(id) ON DELETE CASCADE,
+      FOREIGN KEY(position_id) REFERENCES positions(id) ON DELETE SET NULL
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE courts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        phone TEXT,
-        location TEXT,
-        hourly_rate REAL,
-        position INTEGER DEFAULT 0
-      );
-    ''');
+    CREATE TABLE courts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT,
+      location TEXT,
+      hourly_rate REAL,
+      position INTEGER DEFAULT 0
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE matches (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sport_id INTEGER NOT NULL,
-        court_id INTEGER,
-        date TEXT,
-        time TEXT,
-        FOREIGN KEY(sport_id) REFERENCES sports(id),
-        FOREIGN KEY(court_id) REFERENCES courts(id)
-      );
-    ''');
+    CREATE TABLE matches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sport_id INTEGER NOT NULL,
+      court_id INTEGER,
+      date TEXT,
+      time TEXT,
+      FOREIGN KEY(sport_id) REFERENCES sports(id) ON DELETE CASCADE,
+      FOREIGN KEY(court_id) REFERENCES courts(id) ON DELETE SET NULL
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE match_players (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        match_id INTEGER NOT NULL,
-        player_id INTEGER NOT NULL,
-        attended INTEGER DEFAULT 0,
-        paid INTEGER DEFAULT 0,
-        FOREIGN KEY(match_id) REFERENCES matches(id),
-        FOREIGN KEY(player_id) REFERENCES players(id)
-      );
-    ''');
+    CREATE TABLE match_players (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER NOT NULL,
+      player_id INTEGER NOT NULL,
+      attended INTEGER DEFAULT 0,
+      paid INTEGER DEFAULT 0,
+      FOREIGN KEY(match_id) REFERENCES matches(id) ON DELETE CASCADE,
+      FOREIGN KEY(player_id) REFERENCES players(id) ON DELETE CASCADE
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE notifications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        match_id INTEGER,
-        player_id INTEGER,
-        court_id INTEGER,
-        type TEXT NOT NULL,
-        message TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        FOREIGN KEY(match_id) REFERENCES matches(id),
-        FOREIGN KEY(player_id) REFERENCES players(id),
-        FOREIGN KEY(court_id) REFERENCES courts(id)
-      );
-    ''');
+    CREATE TABLE notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER,
+      player_id INTEGER,
+      court_id INTEGER,
+      type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      FOREIGN KEY(match_id) REFERENCES matches(id) ON DELETE CASCADE,
+      FOREIGN KEY(player_id) REFERENCES players(id) ON DELETE CASCADE,
+      FOREIGN KEY(court_id) REFERENCES courts(id) ON DELETE SET NULL
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE match_teams (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        match_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        FOREIGN KEY(match_id) REFERENCES matches(id)
-      );
-    ''');
+    CREATE TABLE match_teams (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      FOREIGN KEY(match_id) REFERENCES matches(id) ON DELETE CASCADE
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE match_team_players (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        team_id INTEGER NOT NULL,
-        player_id INTEGER NOT NULL,
-        position_id INTEGER,
-        FOREIGN KEY(team_id) REFERENCES match_teams(id),
-        FOREIGN KEY(player_id) REFERENCES players(id),
-        FOREIGN KEY(position_id) REFERENCES positions(id)
-      );
-    ''');
+    CREATE TABLE match_team_players (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      team_id INTEGER NOT NULL,
+      player_id INTEGER NOT NULL,
+      position_id INTEGER,
+      slot INTEGER DEFAULT 1,
+      FOREIGN KEY(team_id) REFERENCES match_teams(id) ON DELETE CASCADE,
+      FOREIGN KEY(player_id) REFERENCES players(id) ON DELETE CASCADE,
+      FOREIGN KEY(position_id) REFERENCES positions(id) ON DELETE SET NULL
+    );
+  ''');
 
     await db.execute('''
-      CREATE TABLE match_sets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        match_id INTEGER NOT NULL,
-        set_number INTEGER NOT NULL,
-        team1_score INTEGER DEFAULT 0,
-        team2_score INTEGER DEFAULT 0,
-        finished INTEGER DEFAULT 0,
-        FOREIGN KEY(match_id) REFERENCES matches(id)
-      );
-    ''');
+    CREATE TABLE match_sets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER NOT NULL,
+      set_number INTEGER NOT NULL,
+      team1_score INTEGER DEFAULT 0,
+      team2_score INTEGER DEFAULT 0,
+      finished INTEGER DEFAULT 0,
+      FOREIGN KEY(match_id) REFERENCES matches(id) ON DELETE CASCADE
+    );
+  ''');
 
     // --- SEED INICIAL DE DEPORTES ---
     int voleyId = await db.insert('sports', {'name': 'Vóley'});

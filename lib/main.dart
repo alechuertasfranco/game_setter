@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:game_setter/features/match_teams/domain/entities/match_team.dart';
+import 'package:game_setter/features/match_teams/presentation/pages/edit_match_team_page.dart';
 import 'package:game_setter/features/match_teams/presentation/pages/match_teams_page.dart';
 import 'package:game_setter/features/notifications/presentarion/pages/send_notification_page.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -72,6 +74,14 @@ class GameSetterApp extends StatelessWidget {
         if (settings.name == '/matchNotifications') {
           final match = settings.arguments as Match;
           return MaterialPageRoute(builder: (_) => SendNotificationPage(match: match));
+        }
+        if (settings.name == '/editTeam') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final match = args['match'] as Match;
+          final team = args['team'] as MatchTeam;
+          return MaterialPageRoute(
+            builder: (_) => EditMatchTeamPage(match: match, team: team),
+          );
         }
 
         // Fallback

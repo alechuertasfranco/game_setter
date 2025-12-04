@@ -28,6 +28,7 @@ Future<void> showAddPlayersSheet({required BuildContext context, required int sp
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    showDragHandle: true,
     builder: (ctx) {
       return StatefulBuilder(
         builder: (context, modalSetState) {

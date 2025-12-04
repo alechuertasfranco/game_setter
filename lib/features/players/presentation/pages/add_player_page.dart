@@ -11,15 +11,14 @@ class AddPlayerPage extends StatelessWidget {
       appBar: AppBar(title: const Text("Agregar jugador")),
       body: PlayerForm(
         onSave: (player, sports, positionsBySport) async {
-          await PlayerRepository().insertPlayerOnly(player);
+          final playerId = await PlayerRepository().insertPlayerOnly(player);
           for (final sportId in sports) {
             final posSet = positionsBySport[sportId];
-            if (player.id == null) return;
             if (posSet == null || posSet.isEmpty) {
-              await PlayerRepository().assignSportToPlayer(player.id!, sportId, null);
+              await PlayerRepository().assignSportToPlayer(playerId, sportId, null);
             } else {
               for (final posId in posSet) {
-                await PlayerRepository().assignSportToPlayer(player.id!, sportId, posId);
+                await PlayerRepository().assignSportToPlayer(playerId, sportId, posId);
               }
             }
           }

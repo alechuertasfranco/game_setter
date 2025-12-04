@@ -55,48 +55,39 @@ class _MatchTeamFormState extends State<MatchTeamForm> {
     final textTheme = Theme.of(context).textTheme;
 
     return SafeArea(
-      child: Form(
-        key: _formKey,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
+      child: SizedBox.expand(
+        child: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Column(
+              children: [
+                /// Nombre del equipo
+                TextFormField(
+                  controller: _nameCtrl,
+                  style: textTheme.bodyLarge,
+                  decoration: InputDecoration(labelText: "Nombre del equipo"),
+                  validator: (v) => (v == null || v.isEmpty) ? "El nombre es obligatorio" : null,
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: MatchTeamVolleyballDiagram(match: widget.match, players: players, availablePlayers: widget.availablePlayers, onPlayersChanged: _updatePlayers),
+                ),
+
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    /// Nombre del equipo
-                    TextFormField(
-                      controller: _nameCtrl,
-                      style: textTheme.bodyLarge,
-                      decoration: InputDecoration(labelText: "Nombre del equipo"),
-                      validator: (v) => (v == null || v.isEmpty) ? "El nombre es obligatorio" : null,
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.55,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: SizedBox.expand(
-                          child: MatchTeamVolleyballDiagram(match: widget.match, players: players, availablePlayers: widget.availablePlayers, onPlayersChanged: _updatePlayers),
-                        ),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _save,
+                        style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
+                        child: Text("Guardar", style: textTheme.titleMedium?.copyWith(color: Colors.blue.shade800)),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _save,
-                      style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
-                      child: Text("Guardar", style: textTheme.titleMedium?.copyWith(color: Colors.blue.shade800)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

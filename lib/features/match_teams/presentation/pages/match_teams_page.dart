@@ -1,9 +1,11 @@
+// lib\features\match_teams\presentation\pages\match_teams_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:game_setter/core/utils/date_formatter.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/match_teams/domain/entities/match_team.dart';
 import 'package:game_setter/features/match_teams/data/match_team_repository.dart';
+import 'package:game_setter/features/match_teams/domain/entities/match_team_player.dart';
 import 'package:game_setter/features/match_teams/presentation/widgets/match_team_card.dart';
 import 'package:game_setter/features/match_teams/presentation/widgets/match_team_card_extension.dart';
 import 'add_match_team_page.dart';
@@ -18,8 +20,8 @@ class MatchTeamsPage extends StatefulWidget {
 }
 
 class _MatchTeamsPageState extends State<MatchTeamsPage> {
-  final MatchTeamRepository _repository = MatchTeamRepository();
   List<MatchTeam> teams = [];
+  Map<int, List<MatchTeamPlayer>> teamPlayers = {};
   bool isLoading = true;
 
   @override
@@ -30,8 +32,15 @@ class _MatchTeamsPageState extends State<MatchTeamsPage> {
 
   Future<void> loadTeams() async {
     setState(() => isLoading = true);
-    teams = await _repository.getTeamsByMatch(widget.match.id!);
-    setState(() => isLoading = false);
+
+    final repo = MatchTeamRepository();
+    final result = await repo.getTeamsWithPlayersByMatch(widget.match.id!);
+
+    setState(() {
+      teams = result.teams;
+      teamPlayers = result.playersGrouped;
+      isLoading = false;
+    });
   }
 
   void goToAddMatch() async {
@@ -48,7 +57,7 @@ class _MatchTeamsPageState extends State<MatchTeamsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text("Equipos - ${DateFormatter.formatDayMonthEs(widget.match.date)}", style: textTheme.headlineSmall?.copyWith(color: Colors.white)),
         backgroundColor: Colors.blueGrey,
         elevation: 4,
@@ -59,13 +68,7 @@ class _MatchTeamsPageState extends State<MatchTeamsPage> {
         overlayOpacity: 0.5,
         spacing: 10,
         children: [
-          SpeedDialChild(
-            child: const Icon(Icons.group_add, size: 20),
-            label: 'Agregar equipo',
-            labelStyle: textTheme.bodySmall,
-            onTap: () => goToAddMatch(),
-            shape: const CircleBorder(),
-          ),
+          SpeedDialChild(child: const Icon(Icons.group_add, size: 20), label: 'Agregar equipo', labelStyle: textTheme.bodySmall, onTap: goToAddMatch, shape: const CircleBorder()),
         ],
       ),
       body: isLoading
@@ -78,7 +81,9 @@ class _MatchTeamsPageState extends State<MatchTeamsPage> {
                 itemCount: teams.length,
                 itemBuilder: (context, i) {
                   final team = teams[i];
-                  return MatchTeamCard(team: team).onCardAction(loadTeams);
+                  final players = teamPlayers[team.id] ?? [];
+
+                  return MatchTeamCard(match: widget.match, team: team, players: players).onCardAction(loadTeams);
                 },
               ),
             ),
