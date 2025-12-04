@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart' hide Notification;
+import 'package:game_setter/features/notifications/presentarion/widget/message_input.dart';
+import 'package:game_setter/features/notifications/presentarion/widget/notification_buttons.dart';
+import 'package:game_setter/features/notifications/presentarion/widget/players_list.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/domain/entities/match_player.dart';
@@ -101,50 +104,62 @@ class _NotificationFormState extends State<NotificationForm> {
     });
   }
 
-  Future<void> sendNotification() async {
-    if (messageController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ingrese un mensaje')));
-      return;
-    }
-
-    for (var player in selectedPlayers) {
-      await NotificationRepository().insertNotification(matchId: widget.match.id, playerId: player.playerId, courtId: null, type: type, message: messageController.text);
-    }
-
-    if (type == 'Reserva' && matchCourt != null) {
-      await NotificationRepository().insertNotification(matchId: widget.match.id, playerId: null, courtId: matchCourt!.id, type: type, message: messageController.text);
-    }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notificación enviada')));
-    Navigator.pop(context, true);
-  }
-
   Future<void> sendWhatsApp(BuildContext context, List<MatchPlayer> selectedPlayers, String message) async {
-    if (selectedPlayers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Seleccione al menos un destinatario')));
+    if (message.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ingrese un mensaje', style: Theme.of(context).textTheme.bodyMedium)));
       return;
     }
 
+    final pendingRecipients = <Map<String, dynamic>>[];
+
     for (var player in selectedPlayers) {
-      final rawPhone = player.player?.phone;
-      if (rawPhone == null || rawPhone.isEmpty) continue;
-
-      // Limpia el número: solo dígitos, formato internacional
-      final phone = rawPhone.replaceAll(RegExp(r'[^0-9]'), '');
-      if (phone.isEmpty) continue;
-
-      final encodedMessage = Uri.encodeComponent(message);
-      final whatsappUrl = Uri.parse('https://wa.me/$phone?text=$encodedMessage');
-
-      try {
-        // No usamos canLaunchUrl porque a veces devuelve false en emuladores
-        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-      } catch (e) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo abrir WhatsApp para ${player.player?.name ?? phone}')));
-      }
+      pendingRecipients.add({'id': player.playerId, 'phone': player.player?.phone, 'name': player.player?.name, 'type': 'player'});
     }
+
+    if (type == 'Reserva' && matchCourt != null && matchCourt?.phone != null && matchCourt!.phone!.isNotEmpty) {
+      pendingRecipients.add({'id': null, 'phone': matchCourt!.phone, 'name': 'Cancha', 'type': 'court'});
+    }
+
+    if (pendingRecipients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No hay destinatarios con número de WhatsApp', style: Theme.of(context).textTheme.bodyMedium)));
+      return;
+    }
+
+    while (pendingRecipients.isNotEmpty) {
+      final recipient = pendingRecipients.first;
+
+      await NotificationRepository().insertNotification(
+        matchId: widget.match.id,
+        playerId: recipient['type'] == 'player' ? recipient['id'] : null,
+        courtId: recipient['type'] == 'court' ? matchCourt?.id : null,
+        type: type,
+        message: message,
+      );
+
+      // Preparar número y URL de WhatsApp
+      final rawPhone = recipient['phone'];
+      if (rawPhone != null && rawPhone.isNotEmpty) {
+        final phone = rawPhone.replaceAll(RegExp(r'[^0-9]'), '');
+        if (phone.isNotEmpty) {
+          final encodedMessage = Uri.encodeComponent(message);
+          final whatsappUrl = Uri.parse('https://wa.me/$phone?text=$encodedMessage');
+
+          try {
+            await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('No se pudo abrir WhatsApp para ${recipient['name'] ?? 'destinatario'}', style: Theme.of(context).textTheme.bodyMedium)));
+          }
+        }
+      }
+
+      pendingRecipients.removeAt(0);
+    }
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Notificación enviada por WhatsApp', style: Theme.of(context).textTheme.bodyMedium)));
   }
 
   NotificationType _mapStringToNotificationType(String type) {
@@ -174,53 +189,36 @@ class _NotificationFormState extends State<NotificationForm> {
       children: [
         DropdownButtonFormField<String>(
           initialValue: type,
-          decoration: const InputDecoration(labelText: "Tipo de notificación"),
-          items: ['Invitación', 'Confirmación', 'Cobro', 'Reserva', 'Info', 'General'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+          decoration: InputDecoration(labelText: "Tipo de notificación", labelStyle: textTheme.bodyMedium),
+          items: ['Invitación', 'Confirmación', 'Cobro', 'Reserva', 'Info', 'General']
+              .map(
+                (t) => DropdownMenuItem(
+                  value: t,
+                  child: Text(t, style: textTheme.bodyLarge),
+                ),
+              )
+              .toList(),
           onChanged: (val) => updateRecipients(val),
         ),
-        const SizedBox(height: 12),
         if (type == 'Invitación' || type == 'Confirmación')
           Row(
             children: [
-              Checkbox(value: includeMapLink, onChanged: (val) => toggleIncludeMapLink(val!)),
-              const Text('Incluir enlace de Maps'),
-            ],
-          ),
-        const SizedBox(height: 12),
-        const Text('Destinatarios:', style: TextStyle(fontWeight: FontWeight.bold)),
-        Expanded(
-          child: ListView(
-            children: [
-              if (type == 'Reserva' && matchCourt != null) ListTile(leading: const Icon(Icons.location_on), title: Text('Cancha: ${matchCourt!.name}')),
-              ...allPlayers.map(
-                (p) => CheckboxListTile(
-                  title: Text(p.player != null ? '${p.player?.name} - ${p.player?.phone}' : 'Player ${p.playerId}', style: textTheme.bodyMedium),
-                  value: selectedPlayers.contains(p),
-                  onChanged: (_) => togglePlayerSelection(p),
-                ),
+              Transform.scale(
+                scale: 0.7,
+                child: Checkbox(value: includeMapLink, onChanged: (val) => toggleIncludeMapLink(val!), materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
               ),
+              Text('Incluir enlace de Maps', style: textTheme.bodyMedium),
             ],
           ),
-        ),
-        TextField(
-          controller: messageController,
-          decoration: InputDecoration(labelText: 'Mensaje', border: OutlineInputBorder(), alignLabelWithHint: true),
-          maxLines: 5,
+        const SizedBox(height: 24),
+        Text('Destinatarios:', style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+        Expanded(
+          child: PlayersList(allPlayers: allPlayers, selectedPlayers: selectedPlayers, matchCourt: matchCourt, type: type, toggleSelection: togglePlayerSelection),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(onPressed: sendNotification, child: const Text('Enviar')),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () => sendWhatsApp(context, selectedPlayers, messageController.text),
-            icon: const Icon(Icons.chat_bubble, color: Colors.green),
-            label: const Text('Enviar por WhatsApp', style: TextStyle(color: Colors.green)),
-          ),
-        ),
+        MessageInput(controller: messageController),
+        const SizedBox(height: 12),
+        NotificationButtons(onSendWhatsApp: () => sendWhatsApp(context, selectedPlayers, messageController.text)),
       ],
     );
   }

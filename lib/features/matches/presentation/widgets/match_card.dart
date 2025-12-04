@@ -18,6 +18,38 @@ class MatchCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
+    void handleAction(String action) async {
+      if (action == 'notify') {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => SendNotificationPage(match: match)));
+      } else if (action == 'delete') {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Eliminar partido", style: textTheme.titleMedium),
+            content: Text("¿Seguro que deseas eliminar este partido?", style: textTheme.bodyMedium),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text("Cancelar", style: textTheme.bodyMedium),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text("Eliminar", style: textTheme.bodyMedium?.copyWith(color: Colors.redAccent)),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm == true) {
+          await MatchRepository().clearMatchPlayers(match.id);
+          await MatchRepository().deleteMatch(match.id);
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Partido eliminado"), duration: Duration(milliseconds: 500)));
+          if (onAction != null) onAction!();
+        }
+      }
+    }
+
     return FutureBuilder(
       future: _loadMatchStats(),
       builder: (context, snapshot) {
@@ -49,40 +81,7 @@ class MatchCard extends StatelessWidget {
             ),
             trailing: PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
-              onSelected: (value) async {
-                if (value == 'notify') {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => SendNotificationPage(match: match)));
-                } else if (value == 'delete') {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text("Eliminar partido", style: textTheme.titleMedium),
-                      content: Text("¿Seguro que deseas eliminar este partido?", style: textTheme.bodyMedium),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text("Cancelar", style: textTheme.bodyMedium),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: Text("Eliminar", style: textTheme.bodyMedium?.copyWith(color: Colors.redAccent)),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirm == true) {
-                    await MatchRepository().clearMatchPlayers(match.id);
-                    await MatchRepository().deleteMatch(match.id);
-
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Partido eliminado"), duration: Duration(milliseconds: 500)));
-                    }
-
-                    if (onAction != null) onAction!();
-                  }
-                }
-              },
+              onSelected: (value) => handleAction(value),
               itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 'notify',

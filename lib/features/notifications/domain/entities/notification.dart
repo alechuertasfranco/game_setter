@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
 import 'package:game_setter/features/courts/domain/entities/court.dart';
@@ -69,19 +71,42 @@ class Notification {
 
   /// Mensajes por defecto dinámicos incluyendo fecha, hora y cancha si aplica
   static String defaultMessage(NotificationType type, {Match? match, Court? court}) {
-    final date = match?.date != null ? ' el ${match?.date}' : ', estoy definiendo el día';
-    final time = match?.time != null ? ' a las ${match?.time}' : ', estoy definiendo la hora';
+    String dateStr = ', estoy definiendo el día';
+    String timeStr = ', estoy definiendo la hora';
+
+    // Formatear fecha
+    if (match?.date != null) {
+      try {
+        final parsedDate = DateTime.parse(match!.date!);
+        final formatter = DateFormat('EEEE dd', 'es_ES');
+        dateStr = ' el ${formatter.format(parsedDate)}';
+      } catch (e) {
+        debugPrint('ERROR parsing date: $e');
+      }
+    }
+
+    // Formatear hora
+    if (match?.time != null) {
+      try {
+        final parsedTime = DateFormat('HH:mm').parse(match!.time!);
+        final timeFormatter = DateFormat('h:mma', 'es_ES');
+        timeStr = ' a las ${timeFormatter.format(parsedTime).toLowerCase()}';
+      } catch (e) {
+        debugPrint('ERROR parsing time: $e');
+      }
+    }
+
     final courtInfo = (court != null && court.name.isNotEmpty) ? ' en ${court.name}' : '';
 
     switch (type) {
       case NotificationType.invitacion:
-        return 'Holas, sale partido$date$time$courtInfo, la haces?';
+        return 'Holas, sale partido$dateStr$timeStr$courtInfo, la haces?';
       case NotificationType.confirmacion:
-        return 'Hello, no te olvides partido$date$time$courtInfo, confirmado';
+        return 'Hello, no te olvides partido$dateStr$timeStr$courtInfo, confirmado';
       case NotificationType.cobro:
-        return 'Hey, no te olvides de pasarme el pago de la cancha de$date porfas';
+        return 'Hey, no te olvides de pasarme el pago de la cancha de$dateStr porfas';
       case NotificationType.reserva:
-        return 'Hola, disculpa tiene cancha disponible para el $date $time?';
+        return 'Hola, disculpa tiene cancha disponible para el$dateStr$timeStr?';
       case NotificationType.info:
         return 'Holas, ...';
       case NotificationType.general:

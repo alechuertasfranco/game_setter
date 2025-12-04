@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:game_setter/features/courts/domain/entities/court.dart';
 import 'package:game_setter/features/courts/presentation/pages/edit_court_page.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
@@ -10,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es_ES', null);
   runApp(const GameSetterApp());
 }
 
