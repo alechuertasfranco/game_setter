@@ -60,6 +60,8 @@ class _CourtFormState extends State<CourtForm> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: SafeArea(
@@ -102,7 +104,11 @@ class _CourtFormState extends State<CourtForm> {
             // Botón guardar
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(onPressed: save, child: Text(widget.initialCourt == null ? "Guardar" : "Guardar cambios")),
+              child: ElevatedButton(
+                onPressed: save,
+                style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
+                child: Text(widget.initialCourt == null ? "Guardar" : "Guardar cambios", style: textTheme.titleMedium?.copyWith(color: Colors.blue.shade800)),
+              ),
             ),
           ],
         ),

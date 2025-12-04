@@ -90,8 +90,8 @@ class _MatchTeamFormState extends State<MatchTeamForm> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _save,
-                      style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue)),
-                      child: Text("Guardar", style: textTheme.titleMedium?.copyWith(color: Colors.blue)),
+                      style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
+                      child: Text("Guardar", style: textTheme.titleMedium?.copyWith(color: Colors.blue.shade800)),
                     ),
                   ),
                 ],

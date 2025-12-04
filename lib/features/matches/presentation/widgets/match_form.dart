@@ -204,7 +204,7 @@ class _MatchFormState extends State<MatchForm> {
     );
   }
 
-  Future<bool?> _handleDismiss(MatchPlayer mp, Player player, TextTheme theme, DismissDirection direction) async {
+  Future<bool?> _handleDismiss(MatchPlayer mp, Player player, TextTheme textTheme, DismissDirection direction) async {
     if (direction == DismissDirection.startToEnd) {
       _toggleAttended(mp);
       return false;
@@ -214,8 +214,8 @@ class _MatchFormState extends State<MatchForm> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: Text("Quitar jugador", style: theme.titleMedium),
-          content: Text("¿Seguro que deseas quitar a ${player.name} del partido?", style: theme.bodyMedium),
+          title: Text("Quitar jugador", style: textTheme.titleMedium),
+          content: Text("¿Seguro que deseas quitar a ${player.name} del partido?", style: textTheme.bodyMedium),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancelar")),
             TextButton(
@@ -233,7 +233,7 @@ class _MatchFormState extends State<MatchForm> {
     return false;
   }
 
-  Widget _buildPlayerTile(MatchPlayer mp, Player p, TextTheme theme) {
+  Widget _buildPlayerTile(MatchPlayer mp, Player p, TextTheme textTheme) {
     return Card(
       margin: const EdgeInsets.all(0),
       child: ListTile(
@@ -243,7 +243,7 @@ class _MatchFormState extends State<MatchForm> {
           padding: const EdgeInsets.all(8),
           child: const Icon(Icons.person, color: Colors.blue, size: 28),
         ),
-        title: Text(p.name, style: theme.bodyLarge),
+        title: Text(p.name, style: textTheme.bodyLarge),
         subtitle: p.phone != null ? Text(p.phone!) : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -269,7 +269,7 @@ class _MatchFormState extends State<MatchForm> {
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
 
-    final theme = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -281,8 +281,13 @@ class _MatchFormState extends State<MatchForm> {
               value: selectedSportId,
               label: "Deporte",
               items: [
-                const DropdownMenuItem(value: null, child: Text("Seleccionar deporte")),
-                ...sports.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                DropdownMenuItem(value: null, child: Text("Seleccionar deporte", style: textTheme.bodyLarge)),
+                ...sports.map(
+                  (s) => DropdownMenuItem(
+                    value: s.id,
+                    child: Text(s.name, style: textTheme.bodyLarge),
+                  ),
+                ),
               ],
               onChanged: (v) async => await _onSportChanged(v),
             ),
@@ -307,8 +312,13 @@ class _MatchFormState extends State<MatchForm> {
               value: selectedCourtId,
               label: "Cancha",
               items: [
-                const DropdownMenuItem(value: null, child: Text("Seleccionar cancha")),
-                ...courts.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
+                DropdownMenuItem(value: null, child: Text("Seleccionar cancha", style: textTheme.bodyLarge)),
+                ...courts.map(
+                  (c) => DropdownMenuItem(
+                    value: c.id,
+                    child: Text(c.name, style: textTheme.bodyLarge),
+                  ),
+                ),
               ],
               onChanged: (v) => setState(() => selectedCourtId = v),
             ),
@@ -318,7 +328,12 @@ class _MatchFormState extends State<MatchForm> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(icon: const Icon(Icons.person_add), label: const Text("Añadir jugadores"), onPressed: _showAddPlayersSheet),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.person_add, color: Color(0xFF1565C0)),
+                    style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
+                    label: Text("Añadir jugadores", style: textTheme.titleMedium?.copyWith(color: Colors.blue.shade800)),
+                    onPressed: _showAddPlayersSheet,
+                  ),
                 ),
               ],
             ),
@@ -339,10 +354,10 @@ class _MatchFormState extends State<MatchForm> {
                           child: Dismissible(
                             key: ValueKey("mp_${mp.playerId}"),
                             direction: DismissDirection.horizontal,
-                            confirmDismiss: (dir) => _handleDismiss(mp, p, theme, dir),
+                            confirmDismiss: (dir) => _handleDismiss(mp, p, textTheme, dir),
                             background: _buildSwipeBackground(Colors.blue, Alignment.centerLeft, Icons.check_circle),
                             secondaryBackground: _buildSwipeBackground(Colors.redAccent, Alignment.centerRight, Icons.delete),
-                            child: _buildPlayerTile(mp, p, theme),
+                            child: _buildPlayerTile(mp, p, textTheme),
                           ),
                         );
                       },
@@ -351,7 +366,11 @@ class _MatchFormState extends State<MatchForm> {
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(onPressed: _save, child: Text(widget.initialMatch == null ? "Guardar partido" : "Guardar cambios")),
+              child: ElevatedButton(
+                onPressed: _save,
+                style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
+                child: Text(widget.initialMatch == null ? "Guardar partido" : "Guardar cambios", style: textTheme.titleMedium?.copyWith(color: Colors.blue.shade800)),
+              ),
             ),
           ],
         ),

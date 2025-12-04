@@ -46,9 +46,9 @@ class GameSetterApp extends StatelessWidget {
           labelMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14), // Uso: Botones estándar, etiquetas secundarias
           labelSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 12), // Uso: Pequeñas etiquetas o botones
           // Título de tarjetas, widgets específicos
-          titleLarge: GoogleFonts.robotoSlab(fontWeight: FontWeight.w600, fontSize: 18), // Uso: Títulos de card o widget destacados
-          titleMedium: GoogleFonts.robotoSlab(fontWeight: FontWeight.w500, fontSize: 16), // Uso: Subtítulos dentro de widgets
-          titleSmall: GoogleFonts.robotoSlab(fontWeight: FontWeight.w500, fontSize: 14), // Uso: Subtítulos pequeños dentro de widgets
+          titleLarge: GoogleFonts.robotoSlab(fontWeight: FontWeight.w500, fontSize: 18), // Uso: Títulos de card o widget destacados
+          titleMedium: GoogleFonts.robotoSlab(fontWeight: FontWeight.w400, fontSize: 16), // Uso: Subtítulos dentro de widgets
+          titleSmall: GoogleFonts.robotoSlab(fontWeight: FontWeight.w400, fontSize: 14), // Uso: Subtítulos pequeños dentro de widgets
         ),
       ),
       home: const HomePage(),

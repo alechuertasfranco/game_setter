@@ -146,14 +146,23 @@ class _PlayerFormState extends State<PlayerForm> {
                     initialValue: sportToAddId,
                     decoration: const InputDecoration(labelText: "Agregar deporte"),
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text("Seleccionar deporte")),
-                      ...sports.map((s) => DropdownMenuItem<int?>(value: s.id, child: Text(s.name))),
+                      DropdownMenuItem<int?>(value: null, child: Text("Seleccionar deporte", style: textTheme.bodyLarge)),
+                      ...sports.map(
+                        (s) => DropdownMenuItem<int?>(
+                          value: s.id,
+                          child: Text(s.name, style: textTheme.bodyLarge),
+                        ),
+                      ),
                     ],
                     onChanged: (v) => setState(() => sportToAddId = v),
                   ),
                 ),
                 const SizedBox(width: 12),
-                ElevatedButton(onPressed: addSelectedSport, child: const Text("Añadir")),
+                ElevatedButton(
+                  onPressed: addSelectedSport,
+                  style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
+                  child: Text("Añadir", style: textTheme.titleSmall?.copyWith(color: Colors.blue.shade800)),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -233,7 +242,11 @@ class _PlayerFormState extends State<PlayerForm> {
             ),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(onPressed: save, child: Text(widget.initialPlayer == null ? "Guardar" : "Guardar cambios")),
+              child: ElevatedButton(
+                onPressed: save,
+                style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue)),
+                child: Text(widget.initialPlayer == null ? "Guardar" : "Guardar cambios", style: textTheme.titleMedium?.copyWith(color: Colors.blue)),
+              ),
             ),
           ],
         ),

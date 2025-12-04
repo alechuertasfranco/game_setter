@@ -43,6 +43,8 @@ Future<List<Map<String, String?>>?> showImportContactsSheet(BuildContext context
     builder: (ctx) {
       return StatefulBuilder(
         builder: (context, modalSetState) {
+          final textTheme = Theme.of(context).textTheme;
+
           void filterContacts(String query) {
             final lowerQuery = query.toLowerCase();
             modalSetState(() {
@@ -71,7 +73,7 @@ Future<List<Map<String, String?>>?> showImportContactsSheet(BuildContext context
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("Selecciona contactos", style: Theme.of(context).textTheme.titleMedium),
+                  Text("Selecciona contactos", style: textTheme.titleMedium),
                   const SizedBox(height: 12),
 
                   // Buscador
@@ -124,9 +126,13 @@ Future<List<Map<String, String?>>?> showImportContactsSheet(BuildContext context
                       ElevatedButton(
                         onPressed: () => Navigator.pop(ctx, null),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200),
-                        child: const Text("Cancelar", style: TextStyle(color: Colors.blueGrey)),
+                        child: Text("Cancelar", style: textTheme.titleMedium?.copyWith(color: Colors.blueGrey)),
                       ),
-                      ElevatedButton(onPressed: selectedContacts.isEmpty ? null : handleAdd, child: const Text("Agregar")),
+                      ElevatedButton(
+                        onPressed: selectedContacts.isEmpty ? null : handleAdd,
+                        style: OutlinedButton.styleFrom(side: selectedContacts.isEmpty ? null : BorderSide(color: Colors.blue.shade800)),
+                        child: Text("Guardar", style: textTheme.titleMedium?.copyWith(color: selectedContacts.isEmpty ? Colors.blueGrey : Colors.blue.shade800)),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

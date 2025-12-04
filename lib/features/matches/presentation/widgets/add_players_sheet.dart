@@ -31,6 +31,8 @@ Future<void> showAddPlayersSheet({required BuildContext context, required int sp
     builder: (ctx) {
       return StatefulBuilder(
         builder: (context, modalSetState) {
+          final textTheme = Theme.of(context).textTheme;
+
           void filterPlayers(String query) {
             final lowerQuery = query.toLowerCase();
             modalSetState(() {
@@ -84,7 +86,13 @@ Future<void> showAddPlayersSheet({required BuildContext context, required int sp
                               return ListTile(
                                 title: Text(p.name),
                                 subtitle: p.phone != null ? Text(p.phone!) : null,
-                                trailing: ElevatedButton(onPressed: alreadyAdded ? null : () => addPlayer(p), child: Text(alreadyAdded ? "Agregado" : "Agregar")),
+                                trailing: ElevatedButton(
+                                  onPressed: alreadyAdded ? null : () => addPlayer(p),
+                                  child: Text(
+                                    alreadyAdded ? "Agregado" : "Agregar",
+                                    style: textTheme.bodyMedium?.copyWith(color: alreadyAdded ? Colors.white : Colors.blue.shade800),
+                                  ),
+                                ),
                                 onTap: alreadyAdded ? null : () => addPlayer(p),
                               );
                             },
@@ -98,8 +106,8 @@ Future<void> showAddPlayersSheet({required BuildContext context, required int sp
                     children: [
                       ElevatedButton(
                         onPressed: () => Navigator.pop(ctx),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200),
-                        child: const Text("Cerrar", style: TextStyle(color: Colors.blueGrey)),
+                        style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
+                        child: Text("Guardar", style: textTheme.titleSmall?.copyWith(color: Colors.blue.shade800)),
                       ),
                     ],
                   ),

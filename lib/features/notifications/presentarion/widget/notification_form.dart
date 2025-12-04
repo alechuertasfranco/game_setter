@@ -229,7 +229,7 @@ class _NotificationFormState extends State<NotificationForm> {
             ],
           ),
         const SizedBox(height: 24),
-        Text('Destinatarios:', style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text('Destinatarios:', style: textTheme.titleMedium),
         Expanded(
           child: PlayersList(allPlayers: allPlayers, selectedPlayers: selectedPlayers, matchCourt: matchCourt, type: type, toggleSelection: togglePlayerSelection),
         ),
