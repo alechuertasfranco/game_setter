@@ -1,7 +1,7 @@
 import 'match_player.dart';
 
 class Match {
-  final int? id; // <-- ahora puede ser null al crear un match nuevo
+  final int? id;
   final int sportId;
   final int? courtId;
   final String? date;

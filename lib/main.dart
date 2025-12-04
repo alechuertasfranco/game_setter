@@ -30,13 +30,13 @@ class GameSetterApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         textTheme: TextTheme(
           // Títulos grandes (pantallas, headers principales)
-          displayLarge: GoogleFonts.montserrat(fontWeight: FontWeight.w700, fontSize: 36), // Uso: Splash screens, landing principal
-          displayMedium: GoogleFonts.montserrat(fontWeight: FontWeight.w700, fontSize: 32), // Uso: Secciones principales
-          displaySmall: GoogleFonts.montserrat(fontWeight: FontWeight.w700, fontSize: 28), // Uso: Subtítulos grandes
+          displayLarge: GoogleFonts.robotoSlab(fontWeight: FontWeight.w700, fontSize: 36), // Uso: Splash screens, landing principal
+          displayMedium: GoogleFonts.robotoSlab(fontWeight: FontWeight.w700, fontSize: 32), // Uso: Secciones principales
+          displaySmall: GoogleFonts.robotoSlab(fontWeight: FontWeight.w700, fontSize: 28), // Uso: Subtítulos grandes
           // Encabezados dentro de páginas
-          headlineLarge: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 24), // Uso: Títulos de secciones importantes
-          headlineMedium: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 20), // Uso: Títulos secundarios
-          headlineSmall: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 18), // Uso: Titulos pequeños o tarjetas
+          headlineLarge: GoogleFonts.bitter(fontWeight: FontWeight.w600, fontSize: 24), // Uso: Títulos de secciones importantes
+          headlineMedium: GoogleFonts.bitter(fontWeight: FontWeight.w600, fontSize: 20), // Uso: Títulos secundarios
+          headlineSmall: GoogleFonts.bitter(fontWeight: FontWeight.w600, fontSize: 18), // Uso: Titulos pequeños o tarjetas
           // Texto de cuerpo
           bodyLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w400, fontSize: 16), // Uso: Texto normal principal
           bodyMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w400, fontSize: 14), // Uso: Texto de cuerpo secundario
@@ -46,9 +46,9 @@ class GameSetterApp extends StatelessWidget {
           labelMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14), // Uso: Botones estándar, etiquetas secundarias
           labelSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 12), // Uso: Pequeñas etiquetas o botones
           // Título de tarjetas, widgets específicos
-          titleLarge: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 18), // Uso: Títulos de card o widget destacados
-          titleMedium: GoogleFonts.montserrat(fontWeight: FontWeight.w500, fontSize: 16), // Uso: Subtítulos dentro de widgets
-          titleSmall: GoogleFonts.montserrat(fontWeight: FontWeight.w500, fontSize: 14), // Uso: Subtítulos pequeños dentro de widgets
+          titleLarge: GoogleFonts.robotoSlab(fontWeight: FontWeight.w600, fontSize: 18), // Uso: Títulos de card o widget destacados
+          titleMedium: GoogleFonts.robotoSlab(fontWeight: FontWeight.w500, fontSize: 16), // Uso: Subtítulos dentro de widgets
+          titleSmall: GoogleFonts.robotoSlab(fontWeight: FontWeight.w500, fontSize: 14), // Uso: Subtítulos pequeños dentro de widgets
         ),
       ),
       home: const HomePage(),

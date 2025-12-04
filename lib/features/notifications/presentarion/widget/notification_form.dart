@@ -113,60 +113,64 @@ class _NotificationFormState extends State<NotificationForm> {
   }
 
   Future<void> sendSinglePlayerWhatsApp(BuildContext context) async {
-    final player = nextPlayerToSend;
-    if (player == null) return;
-    await sendWhatsApp(context, player, messageController.text);
-    setState(() {
-      selectedPlayers.remove(player);
-    });
+    final message = messageController.text;
+
+    if (type == 'Reserva') {
+      await sendWhatsApp(context: context, message: message, isReservation: true);
+    } else if (selectedPlayers.isNotEmpty) {
+      final player = selectedPlayers.first;
+      await sendWhatsApp(context: context, message: message, player: player);
+      setState(() => selectedPlayers.remove(player));
+    }
   }
 
-  Future<void> sendWhatsApp(BuildContext context, MatchPlayer selectedPlayer, String message) async {
+  Future<void> sendWhatsApp({required BuildContext context, required String message, MatchPlayer? player, bool isReservation = false}) async {
     if (message.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ingrese un mensaje', style: Theme.of(context).textTheme.bodyLarge)));
       return;
     }
 
     final pendingRecipients = <Map<String, dynamic>>[];
-    pendingRecipients.add({'id': selectedPlayer.playerId, 'phone': selectedPlayer.player?.phone, 'name': selectedPlayer.player?.name, 'type': 'player'});
 
-    if (type == 'Reserva' && matchCourt != null && matchCourt?.phone != null && matchCourt!.phone!.isNotEmpty) {
-      pendingRecipients.add({'id': null, 'phone': matchCourt!.phone, 'name': 'Cancha', 'type': 'court'});
+    if (isReservation) {
+      final courtPhone = matchCourt?.phone;
+      if (courtPhone == null || courtPhone.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('La cancha no tiene número de WhatsApp', style: Theme.of(context).textTheme.bodyLarge)));
+        return;
+      }
+
+      pendingRecipients.add({'id': null, 'phone': courtPhone, 'name': 'Cancha', 'type': 'court'});
     }
 
-    if (pendingRecipients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No hay destinatarios con número de WhatsApp', style: Theme.of(context).textTheme.bodyLarge)));
-      return;
+    if (!isReservation) {
+      final phone = player?.player?.phone;
+      if (player == null || phone == null || phone.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('El jugador no tiene número de WhatsApp', style: Theme.of(context).textTheme.bodyLarge)));
+        return;
+      }
+
+      pendingRecipients.add({'id': player.playerId, 'phone': phone, 'name': player.player?.name, 'type': 'player'});
     }
 
     while (pendingRecipients.isNotEmpty) {
-      final recipient = pendingRecipients.first;
+      final r = pendingRecipients.first;
 
       await NotificationRepository().insertNotification(
         matchId: widget.match.id,
-        playerId: recipient['type'] == 'player' ? recipient['id'] : null,
-        courtId: recipient['type'] == 'court' ? matchCourt?.id : null,
+        playerId: r['type'] == 'player' ? r['id'] : null,
+        courtId: r['type'] == 'court' ? matchCourt?.id : null,
         type: type,
         message: message,
       );
 
-      // Preparar número y URL de WhatsApp
-      final rawPhone = recipient['phone'];
-      if (rawPhone != null && rawPhone.isNotEmpty) {
-        final phone = rawPhone.replaceAll(RegExp(r'[^0-9]'), '');
-        if (phone.isNotEmpty) {
-          final encodedMessage = Uri.encodeComponent(message);
-          final whatsappUrl = Uri.parse('https://wa.me/$phone?text=$encodedMessage');
+      final phone = r['phone'].replaceAll(RegExp(r'[^0-9]'), '');
+      final url = Uri.parse('https://wa.me/$phone?text=${Uri.encodeComponent(message)}');
 
-          try {
-            await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('No se pudo abrir WhatsApp para ${recipient['name'] ?? 'destinatario'}', style: Theme.of(context).textTheme.bodyLarge)));
-          }
-        }
+      try {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo abrir WhatsApp para ${r['name']}', style: Theme.of(context).textTheme.bodyLarge)));
       }
 
       pendingRecipients.removeAt(0);
@@ -234,7 +238,11 @@ class _NotificationFormState extends State<NotificationForm> {
         const SizedBox(height: 12),
         NotificationButtons(
           onSendWhatsApp: () => sendSinglePlayerWhatsApp(context),
-          buttonLabel: nextPlayerToSend == null ? null : "Enviar WhatsApp a ${nextPlayerToSend!.player?.name}",
+          buttonLabel: type == 'Reserva'
+              ? "Enviar WhatsApp a la cancha"
+              : nextPlayerToSend == null
+              ? null
+              : "Enviar WhatsApp a ${nextPlayerToSend!.player?.name}",
         ),
       ],
     );

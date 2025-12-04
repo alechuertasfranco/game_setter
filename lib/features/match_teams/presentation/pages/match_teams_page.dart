@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:game_setter/core/utils/date_formatter.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/match_teams/domain/entities/match_team.dart';
 import 'package:game_setter/features/match_teams/data/match_team_repository.dart';
@@ -47,7 +48,8 @@ class _MatchTeamsPageState extends State<MatchTeamsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Equipos - ${widget.match.sportName}", style: textTheme.headlineSmall?.copyWith(color: Colors.white)),
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text("Equipos - ${DateFormatter.formatDayMonthEs(widget.match.date)}", style: textTheme.headlineSmall?.copyWith(color: Colors.white)),
         backgroundColor: Colors.blueGrey,
         elevation: 4,
       ),

@@ -57,42 +57,23 @@ class _MatchTeamFormState extends State<MatchTeamForm> {
     return SafeArea(
       child: Form(
         key: _formKey,
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                children: [
-                  Text("Datos del equipo", style: textTheme.titleLarge),
-                  const SizedBox(height: 16),
-
-                  /// Nombre del equipo
-                  TextFormField(
-                    controller: _nameCtrl,
-                    style: textTheme.bodyLarge,
-                    decoration: InputDecoration(
-                      labelText: "Nombre del equipo",
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  children: [
+                    /// Nombre del equipo
+                    TextFormField(
+                      controller: _nameCtrl,
+                      style: textTheme.bodyLarge,
+                      decoration: InputDecoration(labelText: "Nombre del equipo"),
+                      validator: (v) => (v == null || v.isEmpty) ? "El nombre es obligatorio" : null,
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? "El nombre es obligatorio" : null,
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  Text("Formación / Posiciones", style: textTheme.titleLarge),
-                  const SizedBox(height: 12),
-
-                  /// DIAGRAMA — ocupa todo el espacio disponible
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.55,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.55,
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: SizedBox.expand(
@@ -100,40 +81,23 @@ class _MatchTeamFormState extends State<MatchTeamForm> {
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _save,
+                      style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue)),
+                      child: Text("Guardar", style: textTheme.titleMedium?.copyWith(color: Colors.blue)),
+                    ),
                   ),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 12),
-
-            /// BOTÓN: estilo minimalista
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: Colors.black87,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: _save,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.check_rounded, size: 20),
-                      const SizedBox(width: 8),
-                      Text("Guardar", style: textTheme.titleMedium?.copyWith(color: Colors.white)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-          ],
+            ],
+          ),
         ),
       ),
     );

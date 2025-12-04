@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_setter/core/utils/date_formatter.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/data/match_repository.dart';
 import 'package:game_setter/features/sports/domain/entities/sport.dart';
@@ -63,7 +64,7 @@ class MatchCard extends StatelessWidget {
           paid = data["paid"] ?? 0;
         }
 
-        final title = "${match.sportName} - ${match.date}";
+        final title = "${match.sportName} - ${DateFormatter.formatDayMonthEs(match.date)}";
         final subtitle = "$attended confirmados - $paid pagados";
 
         return Card(

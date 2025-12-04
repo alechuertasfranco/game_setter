@@ -1,5 +1,4 @@
-import 'package:intl/intl.dart';
-import 'package:flutter/material.dart';
+import 'package:game_setter/core/utils/date_formatter.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/players/domain/entities/player.dart';
 import 'package:game_setter/features/courts/domain/entities/court.dart';
@@ -71,30 +70,11 @@ class Notification {
 
   /// Mensajes por defecto dinámicos incluyendo fecha, hora y cancha si aplica
   static String defaultMessage(NotificationType type, {Match? match, Court? court}) {
-    String dateStr = ', estoy definiendo el día';
-    String timeStr = ', estoy definiendo la hora';
+    final formattedDate = DateFormatter.formatDayEs(match?.date);
+    final formattedTime = DateFormatter.formatTimeEs(match?.time);
 
-    // Formatear fecha
-    if (match?.date != null) {
-      try {
-        final parsedDate = DateTime.parse(match!.date!);
-        final formatter = DateFormat('EEEE dd', 'es_ES');
-        dateStr = ' el ${formatter.format(parsedDate)}';
-      } catch (e) {
-        debugPrint('ERROR parsing date: $e');
-      }
-    }
-
-    // Formatear hora
-    if (match?.time != null) {
-      try {
-        final parsedTime = DateFormat('HH:mm').parse(match!.time!);
-        final timeFormatter = DateFormat('h:mma', 'es_ES');
-        timeStr = ' a las ${timeFormatter.format(parsedTime).toLowerCase()}';
-      } catch (e) {
-        debugPrint('ERROR parsing time: $e');
-      }
-    }
+    String dateStr = formattedDate != null ? ' el $formattedDate' : ', estoy definiendo el día';
+    String timeStr = formattedTime != null ? ' a las $formattedTime' : ', estoy definiendo la hora';
 
     final courtInfo = (court != null && court.name.isNotEmpty) ? ' en ${court.name}' : '';
 
