@@ -38,14 +38,6 @@ class _MatchesPageState extends State<MatchesPage> {
     }
   }
 
-  void goToEditMatch(Match m) async {
-    final updated = await Navigator.pushNamed(context, '/editMatch', arguments: m);
-
-    if (updated == true) {
-      loadMatches();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -65,7 +57,7 @@ class _MatchesPageState extends State<MatchesPage> {
           ? Center(child: Text('No hay partidos aún', style: textTheme.bodyLarge))
           : SafeArea(
               child: ListView.builder(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12).copyWith(bottom: 48),
                 itemCount: matches.length,
                 itemBuilder: (context, i) {
                   final m = matches[i];

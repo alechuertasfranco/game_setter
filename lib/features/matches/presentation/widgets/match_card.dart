@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/data/match_repository.dart';
-import 'package:game_setter/features/notifications/presentarion/pages/send_notification_page.dart';
 import 'package:game_setter/features/sports/domain/entities/sport.dart';
 
 class MatchCard extends StatelessWidget {
@@ -11,7 +10,7 @@ class MatchCard extends StatelessWidget {
   const MatchCard({super.key, required this.match, this.onAction});
 
   Future<Map<String, dynamic>> _loadMatchStats() {
-    return MatchRepository().getMatchStatistics(match.id);
+    return MatchRepository().getMatchStatistics(match.id!);
   }
 
   @override
@@ -19,8 +18,10 @@ class MatchCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     void handleAction(String action) async {
-      if (action == 'notify') {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => SendNotificationPage(match: match)));
+      if (action == 'teams') {
+        Navigator.pushNamed(context, '/matchTeams', arguments: match);
+      } else if (action == 'notify') {
+        Navigator.pushNamed(context, '/matchNotifications', arguments: match);
       } else if (action == 'delete') {
         final confirm = await showDialog<bool>(
           context: context,
@@ -41,8 +42,8 @@ class MatchCard extends StatelessWidget {
         );
 
         if (confirm == true) {
-          await MatchRepository().clearMatchPlayers(match.id);
-          await MatchRepository().deleteMatch(match.id);
+          await MatchRepository().clearMatchPlayers(match.id!);
+          await MatchRepository().deleteMatch(match.id!);
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Partido eliminado"), duration: Duration(milliseconds: 500)));
           if (onAction != null) onAction!();
@@ -84,8 +85,21 @@ class MatchCard extends StatelessWidget {
               onSelected: (value) => handleAction(value),
               itemBuilder: (context) => [
                 PopupMenuItem(
+                  value: 'teams',
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: SizedBox(
+                    child: Row(
+                      spacing: 12,
+                      children: [
+                        const Icon(Icons.person_outline, color: Colors.green, size: 20),
+                        Text('Equipos', style: textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                ),
+                PopupMenuItem(
                   value: 'notify',
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // padding compacto
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: SizedBox(
                     child: Row(
                       spacing: 12,

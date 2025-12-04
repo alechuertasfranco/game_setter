@@ -34,7 +34,7 @@ class _NotificationFormState extends State<NotificationForm> {
   }
 
   Future<void> loadInitialData() async {
-    final players = await MatchRepository().getMatchPlayersDetailed(widget.match.id);
+    final players = await MatchRepository().getMatchPlayersDetailed(widget.match.id!);
     final court = await MatchRepository().getCourt(widget.match.courtId);
 
     setState(() {

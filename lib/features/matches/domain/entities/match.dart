@@ -1,7 +1,7 @@
 import 'match_player.dart';
 
 class Match {
-  final int id;
+  final int? id; // <-- ahora puede ser null al crear un match nuevo
   final int sportId;
   final int? courtId;
   final String? date;
@@ -10,11 +10,12 @@ class Match {
   final String? courtName;
   final List<MatchPlayer> players;
 
-  Match({required this.id, required this.sportId, this.courtId, this.date, this.time, this.sportName, this.courtName, this.players = const []});
+  Match({this.id, required this.sportId, this.courtId, this.date, this.time, this.sportName, this.courtName, this.players = const []});
 
+  /// Para crear un Match desde una consulta SQL
   factory Match.fromMap(Map<String, dynamic> map, {List<MatchPlayer> players = const []}) {
     return Match(
-      id: map['id'] as int,
+      id: map['match_id'] as int?,
       sportId: map['sport_id'] as int,
       courtId: map['court_id'] as int?,
       date: map['date'] as String?,
@@ -26,6 +27,10 @@ class Match {
   }
 
   Map<String, dynamic> toMap() {
+    return {'sport_id': sportId, 'court_id': courtId, 'date': date, 'time': time};
+  }
+
+  Map<String, dynamic> toMapWithId() {
     return {'id': id, 'sport_id': sportId, 'court_id': courtId, 'date': date, 'time': time};
   }
 

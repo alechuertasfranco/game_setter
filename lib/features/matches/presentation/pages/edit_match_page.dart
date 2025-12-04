@@ -21,9 +21,9 @@ class _EditMatchPageState extends State<EditMatchPage> {
         onSave: (m) async {
           final players = m.players;
           await MatchRepository().updateMatch(m);
-          await MatchRepository().clearMatchPlayers(m.id);
+          await MatchRepository().clearMatchPlayers(m.id!);
           for (final player in players) {
-            await MatchRepository().assignPlayerToMatch(m.id, player);
+            await MatchRepository().assignPlayerToMatch(m.id!, player);
           }
         },
       ),

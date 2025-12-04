@@ -19,14 +19,14 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 5, // ⬅️ NUEVA VERSIÓN
+      version: 6, // NUEVA VERSIÓN
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
   }
 
   Future _createDB(Database db, int version) async {
-    // SPORTS
+    // --- TABLAS EXISTENTES ---
     await db.execute('''
       CREATE TABLE sports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,7 +34,6 @@ class DatabaseService {
       );
     ''');
 
-    // PLAYERS
     await db.execute('''
       CREATE TABLE players (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +43,6 @@ class DatabaseService {
       );
     ''');
 
-    // POSITIONS
     await db.execute('''
       CREATE TABLE positions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +53,6 @@ class DatabaseService {
       );
     ''');
 
-    // PLAYER-SPORTS RELS
     await db.execute('''
       CREATE TABLE player_sports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +65,6 @@ class DatabaseService {
       );
     ''');
 
-    // COURTS
     await db.execute('''
       CREATE TABLE courts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,7 +76,6 @@ class DatabaseService {
       );
     ''');
 
-    // MATCHES
     await db.execute('''
       CREATE TABLE matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,7 +88,6 @@ class DatabaseService {
       );
     ''');
 
-    // PLAYERS PER MATCH
     await db.execute('''
       CREATE TABLE match_players (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,14 +100,13 @@ class DatabaseService {
       );
     ''');
 
-    // NOTIFICATIONS
     await db.execute('''
       CREATE TABLE notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         match_id INTEGER,
         player_id INTEGER,
         court_id INTEGER,
-        type TEXT NOT NULL, -- invitación, confirmación, cobro, reserva, info, general
+        type TEXT NOT NULL,
         message TEXT NOT NULL,
         timestamp TEXT NOT NULL,
         FOREIGN KEY(match_id) REFERENCES matches(id),
@@ -122,7 +115,40 @@ class DatabaseService {
       );
     ''');
 
-    // SEED INITIAL SPORTS
+    await db.execute('''
+      CREATE TABLE match_teams (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        FOREIGN KEY(match_id) REFERENCES matches(id)
+      );
+    ''');
+
+    await db.execute('''
+      CREATE TABLE match_team_players (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        player_id INTEGER NOT NULL,
+        position_id INTEGER,
+        FOREIGN KEY(team_id) REFERENCES match_teams(id),
+        FOREIGN KEY(player_id) REFERENCES players(id),
+        FOREIGN KEY(position_id) REFERENCES positions(id)
+      );
+    ''');
+
+    await db.execute('''
+      CREATE TABLE match_sets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_id INTEGER NOT NULL,
+        set_number INTEGER NOT NULL,
+        team1_score INTEGER DEFAULT 0,
+        team2_score INTEGER DEFAULT 0,
+        finished INTEGER DEFAULT 0,
+        FOREIGN KEY(match_id) REFERENCES matches(id)
+      );
+    ''');
+
+    // --- SEED INICIAL DE DEPORTES ---
     int voleyId = await db.insert('sports', {'name': 'Vóley'});
     int futbolId = await db.insert('sports', {'name': 'Fútbol'});
     int basketId = await db.insert('sports', {'name': 'Básquet'});
@@ -146,5 +172,7 @@ class DatabaseService {
     await db.insert('positions', {'sport_id': basketId, 'name': 'Pívot', 'short_name': 'C'});
   }
 
-  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {}
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    // Aquí se podrían agregar migraciones futuras si la versión cambia
+  }
 }
