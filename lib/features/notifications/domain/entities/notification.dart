@@ -73,20 +73,20 @@ class Notification {
     final formattedDate = DateFormatter.formatDayEs(match?.date);
     final formattedTime = DateFormatter.formatTimeEs(match?.time);
 
-    String dateStr = formattedDate != null ? ' el $formattedDate' : ', estoy definiendo el día';
+    String dateStr = formattedDate != null ? (formattedDate == 'hoy' ? ' hoy' : ' el $formattedDate') : ', estoy definiendo el día';
     String timeStr = formattedTime != null ? ' a las $formattedTime' : ', estoy definiendo la hora';
 
     final courtInfo = (court != null && court.name.isNotEmpty) ? ' en ${court.name}' : '';
 
     switch (type) {
       case NotificationType.invitacion:
-        return 'Holas, sale partido$dateStr$timeStr$courtInfo, la haces?';
+        return 'Holis, go partido$dateStr$timeStr$courtInfo, la haces?';
       case NotificationType.confirmacion:
         return 'Hello, no te olvides partido$dateStr$timeStr$courtInfo, confirmado';
       case NotificationType.cobro:
         return 'Hey, no te olvides de pasarme el pago de la cancha de$dateStr porfas';
       case NotificationType.reserva:
-        return 'Hola, disculpa tiene cancha disponible para el$dateStr$timeStr?';
+        return 'Hola, disculpa tiene cancha disponible para $dateStr$timeStr?';
       case NotificationType.info:
         return 'Holas, ...';
       case NotificationType.general:
