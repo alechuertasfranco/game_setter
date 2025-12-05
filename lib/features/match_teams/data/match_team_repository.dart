@@ -38,7 +38,28 @@ class MatchTeamRepository {
     await database.insert('match_team_players', player.copyWith(teamId: teamId).toMap());
   }
 
-  /// ✅ MÉTODO UNIFICADO: Obtener equipos con sus jugadores en UNA sola operación
+  /// Obtener todos los jugadores de un equipo
+  Future<List<MatchTeamPlayer>> getPlayersByTeam(int teamId) async {
+    final database = await db.database;
+
+    final playerMaps = await database.rawQuery(
+      '''
+        SELECT mtp.id AS mtp_id, mtp.team_id, mtp.player_id, mtp.position_id, mtp.slot,
+              p.name AS player_name, p.phone AS player_phone,
+              pos.name AS position_name, pos.short_name AS position_short_name, pos.sport_id AS position_sport_id
+        FROM match_team_players mtp
+        LEFT JOIN players p ON p.id = mtp.player_id
+        LEFT JOIN positions pos ON pos.id = mtp.position_id
+        WHERE mtp.team_id = ?
+        ORDER BY mtp.slot
+      ''',
+      [teamId],
+    );
+
+    return playerMaps.map((m) => _buildMatchTeamPlayer(m)).toList();
+  }
+
+  /// MÉTODO UNIFICADO: Obtener equipos con sus jugadores y sets en UNA sola operación
   Future<MatchTeamsWithPlayers> getTeamsWithPlayersByMatch(int matchId) async {
     final database = await db.database;
     await Future.delayed(const Duration(milliseconds: 350));
@@ -46,32 +67,27 @@ class MatchTeamRepository {
     // 1. Obtener equipos
     final teamMaps = await database.query('match_teams', where: 'match_id = ?', whereArgs: [matchId]);
 
-    // 2. Obtener todos los jugadores de todos los equipos en UNA consulta
+    // 2. Obtener todos los jugadores de todos los equipos
     final playerMaps = await database.rawQuery(
       '''
-        SELECT mtp.id AS mtp_id, mtp.team_id, mtp.player_id, mtp.position_id, mtp.slot,
-              p.name AS player_name, p.phone AS player_phone,
-              pos.name AS position_name, pos.short_name AS position_short_name, pos.sport_id AS position_sport_id
-        FROM match_team_players mtp
-        INNER JOIN match_teams mt ON mt.id = mtp.team_id
-        LEFT JOIN players p ON p.id = mtp.player_id
-        LEFT JOIN positions pos ON pos.id = mtp.position_id
-        WHERE mt.match_id = ?
-        ORDER BY mtp.team_id, mtp.slot
-      ''',
+      SELECT mtp.id AS mtp_id, mtp.team_id, mtp.player_id, mtp.position_id, mtp.slot,
+             p.name AS player_name, p.phone AS player_phone,
+             pos.name AS position_name, pos.short_name AS position_short_name, pos.sport_id AS position_sport_id
+      FROM match_team_players mtp
+      INNER JOIN match_teams mt ON mt.id = mtp.team_id
+      LEFT JOIN players p ON p.id = mtp.player_id
+      LEFT JOIN positions pos ON pos.id = mtp.position_id
+      WHERE mt.match_id = ?
+      ORDER BY mtp.team_id, mtp.slot
+    ''',
       [matchId],
     );
 
-    // 3. Agrupar jugadores por team_id
     final Map<int, List<MatchTeamPlayer>> playersGrouped = {};
     for (final m in playerMaps) {
       final teamId = m['team_id'] as int;
       final player = _buildMatchTeamPlayer(m);
-
-      if (!playersGrouped.containsKey(teamId)) {
-        playersGrouped[teamId] = [];
-      }
-      playersGrouped[teamId]!.add(player);
+      playersGrouped.putIfAbsent(teamId, () => []).add(player);
     }
 
     // 4. Crear equipos con sus jugadores
@@ -84,7 +100,7 @@ class MatchTeamRepository {
     return MatchTeamsWithPlayers(teams: teams, playersGrouped: playersGrouped);
   }
 
-  /// Helper para construir MatchTeamPlayer desde un mapa
+  /// Construir jugadores de equipo
   MatchTeamPlayer _buildMatchTeamPlayer(Map<String, dynamic> m) {
     return MatchTeamPlayer(
       id: m['mtp_id'] as int?,
@@ -100,7 +116,7 @@ class MatchTeamRepository {
   }
 }
 
-/// ✅ Clase para retornar equipos y jugadores agrupados juntos
+/// Clase para retornar equipos, jugadores y sets (general)
 class MatchTeamsWithPlayers {
   final List<MatchTeam> teams;
   final Map<int, List<MatchTeamPlayer>> playersGrouped;

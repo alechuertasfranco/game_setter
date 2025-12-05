@@ -142,10 +142,18 @@ class DatabaseService {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       match_id INTEGER NOT NULL,
       set_number INTEGER NOT NULL,
+      team1_id INTEGER NOT NULL,
+      team2_id INTEGER NOT NULL,
       team1_score INTEGER DEFAULT 0,
       team2_score INTEGER DEFAULT 0,
+      winner_team_id INTEGER,          
+      decisive_player_id INTEGER,      
       finished INTEGER DEFAULT 0,
-      FOREIGN KEY(match_id) REFERENCES matches(id) ON DELETE CASCADE
+      FOREIGN KEY(match_id) REFERENCES matches(id) ON DELETE CASCADE,
+      FOREIGN KEY(team1_id) REFERENCES match_teams(id) ON DELETE CASCADE,
+      FOREIGN KEY(team2_id) REFERENCES match_teams(id) ON DELETE CASCADE,
+      FOREIGN KEY(winner_team_id) REFERENCES match_teams(id) ON DELETE SET NULL,
+      FOREIGN KEY(decisive_player_id) REFERENCES players(id) ON DELETE SET NULL
     );
   ''');
 
