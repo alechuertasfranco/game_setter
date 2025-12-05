@@ -3,11 +3,19 @@ import 'package:flutter/material.dart';
 
 class DateFormatter {
   /// Formatea un string de fecha "2025-12-14" → "viernes 14"
+  /// Si la fecha es hoy → "hoy"
   static String? formatDayEs(String? isoDate) {
     if (isoDate == null) return null;
 
     try {
       final date = DateTime.parse(isoDate);
+      final now = DateTime.now();
+
+      // Normalizamos ambos para comparar solo fechas sin hora
+      final today = DateTime(now.year, now.month, now.day);
+      final target = DateTime(date.year, date.month, date.day);
+
+      if (target == today) return 'hoy';
       return DateFormat('EEEE dd', 'es_ES').format(date);
     } catch (e) {
       debugPrint("ERROR parsing date: $e");

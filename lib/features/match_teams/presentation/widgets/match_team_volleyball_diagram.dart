@@ -59,7 +59,17 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
 
     setState(() {
       _availablePlayers = updatedPlayers;
+      _updateFormation();
     });
+  }
+
+  void _updateFormation() {
+    final hasOP = teamPlayers.any((tp) {
+      final posObj = positions.firstWhereOrNull((p) => p.id == tp.positionId);
+      return posObj?.shortName == "OP";
+    });
+
+    if (hasOP && !use51Formation) setState(() => use51Formation = true);
   }
 
   Future<void> _loadPositions() async {
@@ -106,7 +116,7 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
                     final player = mp.player;
                     return Card(
                       child: ListTile(
-                        leading: const Icon(Icons.person),
+                        leading: Icon(mp.attended == true ? Icons.person : Icons.person_outline),
                         title: Text(player?.name ?? "Jugador"),
                         trailing: const Icon(Icons.add_circle_outline),
                         onTap: () => Navigator.pop(context, player),
@@ -127,6 +137,7 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
 
     setState(() {
       teamPlayers.add(MatchTeamPlayer(id: null, teamId: 0, playerId: result.id!, positionId: pos.id, position: pos, slot: slot));
+      _updateFormation();
     });
 
     widget.onPlayersChanged(teamPlayers);
@@ -135,6 +146,7 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
   void _clearPosition(Position pos, int slot) {
     setState(() {
       teamPlayers.removeWhere((p) => p.positionId == pos.id && p.slot == slot);
+      _updateFormation();
     });
     widget.onPlayersChanged(teamPlayers);
   }
@@ -188,71 +200,83 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [_buildHeader(textTheme), const SizedBox(height: 12), _buildCourt()]),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(TextTheme textTheme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        DropdownButton<bool>(
+          value: use51Formation,
+          items: [
+            DropdownMenuItem(value: true, child: Text("Formación 5–1", style: textTheme.bodyMedium)),
+            DropdownMenuItem(value: false, child: Text("Formación 4–2", style: textTheme.bodyMedium)),
+          ],
+          onChanged: (v) => setState(() => use51Formation = v!),
+        ),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            DropdownButton<bool>(
-              value: use51Formation,
-              items: [
-                DropdownMenuItem(value: true, child: Text("Formación 5–1", style: textTheme.bodyMedium)),
-                DropdownMenuItem(value: false, child: Text("Formación 4–2", style: textTheme.bodyMedium)),
-              ],
-              onChanged: (v) => setState(() => use51Formation = v!),
-            ),
-            Row(
-              children: [
-                Text("Líbero", style: textTheme.bodyMedium),
-                Transform.scale(
-                  scale: 0.7,
-                  child: Switch(value: includeLibero, onChanged: (v) => setState(() => includeLibero = v)),
-                ),
-              ],
+            Text("Líbero", style: textTheme.bodyMedium),
+            Transform.scale(
+              scale: 0.7,
+              child: Switch(value: includeLibero, onChanged: (v) => setState(() => includeLibero = v)),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 500),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              border: Border(
-                left: BorderSide(color: Colors.orange.shade500, width: 32),
-                right: BorderSide(color: Colors.orange.shade500, width: 32),
-                bottom: BorderSide(color: Colors.orange.shade500, width: 40),
-              ),
-            ),
-            padding: const EdgeInsets.all(12),
+      ],
+    );
+  }
+
+  Widget _buildCourt() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        border: Border(
+          left: BorderSide(color: Colors.orange.shade500, width: 32),
+          right: BorderSide(color: Colors.orange.shade500, width: 32),
+          bottom: BorderSide(color: Colors.orange.shade500, width: 40),
+        ),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(height: 6, color: Colors.black12),
+          const SizedBox(height: 24),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 350),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Container(height: 6, color: Colors.black12),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_circle(pos("PTA"), 4), _circle(pos("CTR"), 3), _circle(pos("ARM"), 2)]),
+                const SizedBox(height: 12),
+                Container(height: 2, width: double.infinity, color: Colors.orange.shade300),
                 const SizedBox(height: 24),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_circle(pos("PTA"), 4), _circle(pos("CTR"), 3), _circle(pos("ARM"), 2)]),
-                      const SizedBox(height: 12),
-                      Container(height: 2, width: double.infinity, color: Colors.orange.shade300),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _circle(pos(use51Formation ? "OP" : "ARM"), 5),
-                          Column(spacing: 12, children: [_circle(pos("CTR"), 6), if (includeLibero && positions.any((p) => p.shortName == "LIB")) _circle(pos("LIB"), 7)]),
-                          _circle(pos("PTA"), 1),
-                        ],
-                      ),
-                    ],
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _circle(pos(use51Formation ? "OP" : "ARM"), 5),
+                    Column(spacing: 12, children: [_circle(pos("CTR"), 6), if (includeLibero && positions.any((p) => p.shortName == "LIB")) _circle(pos("LIB"), 7)]),
+                    _circle(pos("PTA"), 1),
+                  ],
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

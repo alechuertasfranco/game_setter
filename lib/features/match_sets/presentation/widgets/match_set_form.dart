@@ -86,7 +86,68 @@ class _MatchSetFormState extends State<MatchSetForm> with SingleTickerProviderSt
     }
   }
 
+  Future<void> _showEditScoreDialog(int team) async {
+    final textTheme = Theme.of(context).textTheme;
+    final controller = TextEditingController(text: team == 1 ? matchSet.team1Score.toString() : matchSet.team2Score.toString());
+
+    final newScore = await showDialog<int>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Modificar puntaje"),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: "Nuevo puntaje"),
+          style: textTheme.bodyLarge,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancelar", style: textTheme.bodyMedium),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text);
+              Navigator.pop(context, value);
+            },
+            child: Text("Guardar", style: textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+
+    if (newScore != null && newScore >= 0) {
+      if (team == 1) {
+        _updateSet(matchSet.copyWith(team1Score: newScore));
+      } else {
+        _updateSet(matchSet.copyWith(team2Score: newScore));
+      }
+    }
+  }
+
   Future<void> _finishSet() async {
+    final textTheme = Theme.of(context).textTheme;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Confirmar"),
+        content: Text("¿Seguro que quieres finalizar este set?", style: textTheme.bodyLarge),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("Cancelar", style: textTheme.bodyMedium),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text("Sí, finalizar", style: textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     int? winner;
     if (matchSet.team1Score > matchSet.team2Score) {
       winner = matchSet.team1Id;
@@ -96,6 +157,7 @@ class _MatchSetFormState extends State<MatchSetForm> with SingleTickerProviderSt
 
     final players = [...team1Players, ...team2Players];
 
+    if (!mounted) return;
     final mvp = await showDialog<int>(
       context: context,
       builder: (_) => AlertDialog(
@@ -131,9 +193,9 @@ class _MatchSetFormState extends State<MatchSetForm> with SingleTickerProviderSt
           _teamsHeader(textTheme),
           const SizedBox(height: 10),
           _scoreRow(textTheme),
-          const SizedBox(height: 20),
-          _finishButton(textTheme),
-          const SizedBox(height: 20),
+          if (!isLandscape) const SizedBox(height: 20),
+          if (!isLandscape) _finishButton(textTheme),
+          if (!isLandscape) const SizedBox(height: 20),
           if (!isLandscape) Expanded(child: _playersGrid(textTheme)),
         ],
       ),
@@ -166,7 +228,7 @@ class _MatchSetFormState extends State<MatchSetForm> with SingleTickerProviderSt
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton(
-          style: ElevatedButton.styleFrom(side: const BorderSide(color: Colors.blue)),
+          style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue)),
           onPressed: matchSet.finished ? null : _finishSet,
           child: Text(matchSet.finished ? "Set Finalizado" : "Finalizar Set", style: textTheme.titleMedium),
         ),
@@ -175,8 +237,14 @@ class _MatchSetFormState extends State<MatchSetForm> with SingleTickerProviderSt
   }
 
   Widget _scoreColumn(TextTheme textTheme, int score, int team, bool isLeft) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final deviceHeight = MediaQuery.of(context).size.height;
+    final textSize = (isLandscape ? deviceHeight * 0.25 : 20.0);
+    final buttonSize = (isLandscape ? deviceHeight * 0.5 : 80.0);
+
     return Column(
       children: [
+        if (isLandscape) SizedBox(height: deviceHeight * 0.1),
         Row(
           children: [
             if (isLeft) _smallBtn("-", () => _decreaseScore(team)),
@@ -184,17 +252,11 @@ class _MatchSetFormState extends State<MatchSetForm> with SingleTickerProviderSt
               scale: _buttonScale,
               child: GestureDetector(
                 onTap: () => _increaseScore(team),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.green.shade100),
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 8, offset: const Offset(0, 4))],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text("$score", style: textTheme.headlineMedium),
+                onLongPress: () => _showEditScoreDialog(team),
+                child: ElevatedButton(
+                  onPressed: () => _increaseScore(team),
+                  style: ElevatedButton.styleFrom(minimumSize: Size(buttonSize, buttonSize), shape: const CircleBorder(), padding: EdgeInsets.zero),
+                  child: Text("$score", style: textTheme.headlineMedium?.copyWith(fontSize: textSize)),
                 ),
               ),
             ),
@@ -210,12 +272,7 @@ class _MatchSetFormState extends State<MatchSetForm> with SingleTickerProviderSt
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: ElevatedButton(
         onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          side: BorderSide(color: Colors.red.shade100),
-          minimumSize: const Size(32, 32),
-          shape: const CircleBorder(),
-          padding: EdgeInsets.zero,
-        ),
+        style: ElevatedButton.styleFrom(minimumSize: const Size(32, 32), shape: const CircleBorder(), padding: EdgeInsets.zero),
         child: Text(label),
       ),
     );
@@ -244,7 +301,9 @@ class _MatchSetFormState extends State<MatchSetForm> with SingleTickerProviderSt
           children: [
             if (isTeam1 && pos != null) _posBadge(pos),
             if (isTeam1) const SizedBox(width: 10),
-            Text(name, style: textTheme.bodyLarge),
+            Expanded(
+              child: Text(name, style: textTheme.bodyLarge, overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: isTeam1 ? TextAlign.left : TextAlign.right),
+            ),
             if (!isTeam1) const SizedBox(width: 10),
             if (!isTeam1 && pos != null) _posBadge(pos),
           ],

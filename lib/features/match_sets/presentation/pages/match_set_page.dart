@@ -37,14 +37,17 @@ class _MatchSetPageState extends State<MatchSetPage> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text('Periodo', style: textTheme.headlineSmall?.copyWith(color: Colors.white)),
-        backgroundColor: Colors.blueGrey,
-        elevation: 4,
-      ),
+      appBar: isLandscape
+          ? null
+          : AppBar(
+              iconTheme: const IconThemeData(color: Colors.white),
+              title: Text('Periodo', style: textTheme.headlineSmall?.copyWith(color: Colors.white)),
+              backgroundColor: Colors.blueGrey,
+              elevation: 4,
+            ),
       body: isLoading ? const Center(child: CircularProgressIndicator()) : MatchSetForm(matchSetId: selectedSetId, onSave: _onSave),
     );
   }
