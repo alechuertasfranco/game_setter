@@ -24,6 +24,7 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
   List<Position> positions = [];
   late List<MatchTeamPlayer> teamPlayers;
   List<MatchPlayer> _availablePlayers = [];
+  List<int> _takenPlayers = [];
 
   bool use51Formation = false;
   bool includeLibero = false;
@@ -48,17 +49,15 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
     final allPlayers = [...widget.availablePlayers];
     final updatedPlayers = <MatchPlayer>[];
     final takenPlayersList = await MatchPlayerRepository().getPlayersTaken(matchId: widget.match.id!);
-    final takenPlayersSet = takenPlayersList.toSet();
-    final teamPlayerIds = teamPlayers.map((e) => e.playerId).toSet();
 
     for (var mp in allPlayers) {
-      if (takenPlayersSet.contains(mp.playerId) && !teamPlayerIds.contains(mp.playerId)) continue;
       final positions = await MatchPlayerRepository().getPlayerPositionsForMatch(playerId: mp.playerId, sportId: widget.match.sportId);
       updatedPlayers.add(mp.copyWith(positions: positions));
     }
 
     setState(() {
       _availablePlayers = updatedPlayers;
+      _takenPlayers = takenPlayersList;
       _updateFormation();
     });
   }
@@ -86,49 +85,82 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
   void _selectPlayerForPosition(Position pos, int slot) async {
     final theme = Theme.of(context).textTheme;
 
-    final filteredPlayers = _availablePlayers.where((mp) {
-      final alreadySelected = teamPlayers.any((tp) => tp.playerId == mp.playerId);
-      final canPlayPosition = mp.positions.any((p) => p.id == pos.id);
-      return !alreadySelected && canPlayPosition;
-    }).toList();
+    List<MatchPlayer> getFor(String type) {
+      return _availablePlayers.where((mp) {
+        final alreadySelected = teamPlayers.any((tp) => tp.playerId == mp.playerId);
+        final canPlayPosition = mp.positions.any((p) => p.id == pos.id);
+        final isTaken = _takenPlayers.contains(mp.playerId);
+        final isUnconfirmed = mp.attended != true;
 
-    final result = await showModalBottomSheet<Player>(
+        if (!canPlayPosition) return false;
+
+        return switch (type) {
+          "added" => alreadySelected,
+          "taken" => isTaken && !alreadySelected,
+          "unconfirmed" => isUnconfirmed,
+          _ => !alreadySelected && !isTaken && !isUnconfirmed,
+        };
+      }).toList();
+    }
+
+    Widget buildDividerTitle(String text) {
+      return Row(
+        children: [
+          const Expanded(child: Divider(thickness: 0.6)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(text, style: theme.bodySmall),
+          ),
+          const Expanded(child: Divider(thickness: 0.6)),
+        ],
+      );
+    }
+
+    Widget buildFilterTile(String label, String type) {
+      return ExpansionTile(
+        visualDensity: VisualDensity.compact,
+        tilePadding: const EdgeInsets.symmetric(vertical: 0),
+        childrenPadding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+        trailing: const SizedBox.shrink(),
+        title: buildDividerTitle(label),
+        children: getFor(type).map((mp) => _playerTile(mp, context, pos, slot)).toList(),
+      );
+    }
+
+    final Player? result = await showModalBottomSheet<Player>(
       context: context,
       showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Text("Seleccionar ${pos.name} (0$slot)", style: theme.titleLarge),
-              const SizedBox(height: 12),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Buscar jugador",
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView(
-                  children: filteredPlayers.map((mp) {
-                    final player = mp.player;
-                    return Card(
-                      child: ListTile(
-                        leading: Icon(mp.attended == true ? Icons.person : Icons.person_outline),
-                        title: Text(player?.name ?? "Jugador"),
-                        trailing: const Icon(Icons.add_circle_outline),
-                        onTap: () => Navigator.pop(context, player),
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, modalSetState) {
+            return SafeArea(
+              child: Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: Padding(
+                  padding: EdgeInsets.only(left: 16, right: 16, bottom: MediaQuery.of(context).viewInsets.bottom),
+                  child: Column(
+                    children: [
+                      Text("Seleccionar ${pos.name} (0$slot)", style: theme.titleLarge),
+                      const SizedBox(height: 12),
+
+                      Expanded(
+                        child: ListView(
+                          children: [
+                            ...getFor("all").map((mp) => _playerTile(mp, context, pos, slot)),
+                            buildFilterTile("Mostrar de otros equipos", "taken"),
+                            buildFilterTile("Mostrar no confirmados", "unconfirmed"),
+                            buildFilterTile("Mostrar agregados", "added"),
+                          ],
+                        ),
                       ),
-                    );
-                  }).toList(),
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
 
     if (result == null) return;
@@ -141,6 +173,18 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
     });
 
     widget.onPlayersChanged(teamPlayers);
+  }
+
+  Widget _playerTile(MatchPlayer mp, BuildContext context, Position pos, int slot) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8, right: 16),
+      child: ListTile(
+        leading: Icon(mp.attended == true ? Icons.person : Icons.person_outline, color: Colors.grey.shade800),
+        title: Text(mp.player?.name ?? "Jugador"),
+        trailing: const Icon(Icons.add_circle_outline),
+        onTap: () => Navigator.pop(context, mp.player),
+      ),
+    );
   }
 
   void _clearPosition(Position pos, int slot) {
@@ -168,7 +212,6 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
         label = _initialsForPlayer(playerItemInList!.player!);
         color = Colors.blue.shade300;
       } else {
-        // Jugador no encontrado en _availablePlayers, usa label por defecto
         label = pos.shortName;
         color = Colors.grey.shade300;
       }

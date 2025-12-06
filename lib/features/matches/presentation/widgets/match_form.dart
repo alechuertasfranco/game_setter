@@ -48,9 +48,6 @@ class _MatchFormState extends State<MatchForm> {
     _initForm();
   }
 
-  /// ----------------------------
-  /// INIT
-  /// ----------------------------
   Future<void> _initForm() async {
     sports = await sportRepository.getSports();
     courts = await courtRepository.getAllCourts();
@@ -71,9 +68,6 @@ class _MatchFormState extends State<MatchForm> {
     setState(() => isLoading = false);
   }
 
-  /// ----------------------------
-  /// HELPERS
-  /// ----------------------------
   Future<void> _onSportChanged(int? id) async {
     if (id == null) return;
 
@@ -146,9 +140,6 @@ class _MatchFormState extends State<MatchForm> {
     setState(() {});
   }
 
-  /// ----------------------------
-  /// SAVE MATCH
-  /// ----------------------------
   Future<void> _save() async {
     if (selectedSportId == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Seleccione un deporte")));
@@ -171,9 +162,6 @@ class _MatchFormState extends State<MatchForm> {
     Navigator.pop(context, true);
   }
 
-  /// ----------------------------
-  /// UI BUILD HELPERS
-  /// ----------------------------
   Widget _buildDropdown<T>({required T? value, required String label, required List<DropdownMenuItem<T>> items, required Function(T?) onChanged}) {
     return DropdownButtonFormField<T>(
       initialValue: value,
@@ -262,9 +250,6 @@ class _MatchFormState extends State<MatchForm> {
     );
   }
 
-  /// ----------------------------
-  /// BUILD
-  /// ----------------------------
   @override
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
@@ -277,93 +262,111 @@ class _MatchFormState extends State<MatchForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDropdown<int?>(
-              value: selectedSportId,
-              label: "Deporte",
-              items: [
-                DropdownMenuItem(value: null, child: Text("Seleccionar deporte", style: textTheme.bodyLarge)),
-                ...sports.map(
-                  (s) => DropdownMenuItem(
-                    value: s.id,
-                    child: Text(s.name, style: textTheme.bodyLarge),
-                  ),
-                ),
-              ],
-              onChanged: (v) async => await _onSportChanged(v),
-            ),
+            // ---------- CONTENIDO SCROLLABLE ----------
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDropdown<int?>(
+                      value: selectedSportId,
+                      label: "Deporte",
+                      items: [
+                        DropdownMenuItem(value: null, child: Text("Seleccionar deporte", style: textTheme.bodyLarge)),
+                        ...sports.map(
+                          (s) => DropdownMenuItem(
+                            value: s.id,
+                            child: Text(s.name, style: textTheme.bodyLarge),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) async => await _onSportChanged(v),
+                    ),
 
-            const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDateField(label: "Fecha", value: date, onTap: _pickDate),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildDateField(label: "Hora", value: time, onTap: _pickTime),
-                ),
-              ],
-            ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDateField(label: "Fecha", value: date, onTap: _pickDate),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildDateField(label: "Hora", value: time, onTap: _pickTime),
+                        ),
+                      ],
+                    ),
 
-            const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-            _buildDropdown<int?>(
-              value: selectedCourtId,
-              label: "Cancha",
-              items: [
-                DropdownMenuItem(value: null, child: Text("Seleccionar cancha", style: textTheme.bodyLarge)),
-                ...courts.map(
-                  (c) => DropdownMenuItem(
-                    value: c.id,
-                    child: Text(c.name, style: textTheme.bodyLarge),
-                  ),
+                    _buildDropdown<int?>(
+                      value: selectedCourtId,
+                      label: "Cancha",
+                      items: [
+                        DropdownMenuItem(value: null, child: Text("Seleccionar cancha", style: textTheme.bodyLarge)),
+                        ...courts.map(
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name, style: textTheme.bodyLarge),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() => selectedCourtId = v),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.person_add, color: Color(0xFF1565C0)),
+                            style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
+                            label: Text("Añadir jugadores", style: textTheme.titleMedium?.copyWith(color: Colors.blue.shade800)),
+                            onPressed: _showAddPlayersSheet,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Lista dentro del scroll principal
+                    if (matchPlayers.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 20),
+                        child: Center(child: Text("No hay jugadores agregados")),
+                      )
+                    else
+                      ListView.builder(
+                        shrinkWrap: true, // ← importante
+                        physics: const NeverScrollableScrollPhysics(), // ← evita scroll interno
+                        itemCount: matchPlayers.length,
+                        itemBuilder: (_, i) {
+                          final mp = matchPlayers[i];
+                          final p = availablePlayers.firstWhere((x) => x.id == mp.playerId);
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Dismissible(
+                              key: ValueKey("mp_${mp.playerId}"),
+                              direction: DismissDirection.horizontal,
+                              confirmDismiss: (dir) => _handleDismiss(mp, p, textTheme, dir),
+                              background: _buildSwipeBackground(Colors.blue, Alignment.centerLeft, Icons.check_circle),
+                              secondaryBackground: _buildSwipeBackground(Colors.redAccent, Alignment.centerRight, Icons.delete),
+                              child: _buildPlayerTile(mp, p, textTheme),
+                            ),
+                          );
+                        },
+                      ),
+                  ],
                 ),
-              ],
-              onChanged: (v) => setState(() => selectedCourtId = v),
+              ),
             ),
 
             const SizedBox(height: 16),
 
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.person_add, color: Color(0xFF1565C0)),
-                    style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.blue.shade800)),
-                    label: Text("Añadir jugadores", style: textTheme.titleMedium?.copyWith(color: Colors.blue.shade800)),
-                    onPressed: _showAddPlayersSheet,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Expanded(
-              child: matchPlayers.isEmpty
-                  ? const Center(child: Text("No hay jugadores agregados"))
-                  : ListView.builder(
-                      itemCount: matchPlayers.length,
-                      itemBuilder: (_, i) {
-                        final mp = matchPlayers[i];
-                        final p = availablePlayers.firstWhere((x) => x.id == mp.playerId);
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Dismissible(
-                            key: ValueKey("mp_${mp.playerId}"),
-                            direction: DismissDirection.horizontal,
-                            confirmDismiss: (dir) => _handleDismiss(mp, p, textTheme, dir),
-                            background: _buildSwipeBackground(Colors.blue, Alignment.centerLeft, Icons.check_circle),
-                            secondaryBackground: _buildSwipeBackground(Colors.redAccent, Alignment.centerRight, Icons.delete),
-                            child: _buildPlayerTile(mp, p, textTheme),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-
+            // ---------- BOTÓN FIJO ----------
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

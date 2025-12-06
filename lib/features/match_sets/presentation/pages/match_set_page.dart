@@ -7,8 +7,9 @@ class MatchSetPage extends StatefulWidget {
   final int team1Id;
   final int team2Id;
   final int? setId;
+  final VoidCallback? onSave;
 
-  const MatchSetPage({super.key, required this.matchId, required this.team1Id, required this.team2Id, this.setId});
+  const MatchSetPage({super.key, required this.matchId, required this.team1Id, required this.team2Id, this.setId, this.onSave});
 
   @override
   State<MatchSetPage> createState() => _MatchSetPageState();
@@ -32,6 +33,7 @@ class _MatchSetPageState extends State<MatchSetPage> {
 
   void _onSave() {
     if (mounted) Navigator.pop(context, true);
+    widget.onSave?.call();
   }
 
   @override
