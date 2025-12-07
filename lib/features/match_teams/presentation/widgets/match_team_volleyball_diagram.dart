@@ -78,8 +78,13 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
 
   String _initialsForPlayer(Player p) {
     final parts = p.name.trim().split(" ");
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return "${parts.first[0]}${parts.last[0]}".toUpperCase();
+
+    if (parts.length == 1) {
+      return parts.first[0].toUpperCase() + parts.first.substring(1);
+    }
+
+    final first = parts.first;
+    return first[0].toUpperCase() + first.substring(1).toLowerCase();
   }
 
   void _selectPlayerForPosition(Position pos, int slot) async {
@@ -229,7 +234,7 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
           border: Border.all(color: Colors.black26),
         ),
         alignment: Alignment.center,
-        child: Text(label, style: textTheme.bodyLarge),
+        child: Text(label, style: textTheme.bodySmall),
       ),
     );
   }

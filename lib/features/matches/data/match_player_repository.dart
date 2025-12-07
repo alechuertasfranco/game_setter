@@ -44,7 +44,10 @@ class MatchPlayerRepository {
       [playerId, sportId],
     );
 
-    return result.map((p) => Position(id: p['id'] as int, sportId: sportId, name: p['name'] as String, shortName: p['short_name'] as String)).toList();
+    return result
+        .where((p) => p['id'] != null)
+        .map((p) => Position(id: p['id'] as int, sportId: sportId, name: p['name'] as String, shortName: p['short_name'] as String))
+        .toList();
   }
 
   /// Devuelve todos los player_id que pertenecen a algún equipo de un match específico
