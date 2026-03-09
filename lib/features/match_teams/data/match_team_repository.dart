@@ -48,7 +48,7 @@ class MatchTeamRepository {
               p.name AS player_name, p.phone AS player_phone,
               pos.name AS position_name, pos.short_name AS position_short_name, pos.sport_id AS position_sport_id
         FROM match_team_players mtp
-        LEFT JOIN players p ON p.id = mtp.player_id
+        INNER JOIN players p ON p.id = mtp.player_id
         LEFT JOIN positions pos ON pos.id = mtp.position_id
         WHERE mtp.team_id = ?
         ORDER BY mtp.slot
@@ -75,7 +75,7 @@ class MatchTeamRepository {
              pos.name AS position_name, pos.short_name AS position_short_name, pos.sport_id AS position_sport_id
       FROM match_team_players mtp
       INNER JOIN match_teams mt ON mt.id = mtp.team_id
-      LEFT JOIN players p ON p.id = mtp.player_id
+      INNER JOIN players p ON p.id = mtp.player_id
       LEFT JOIN positions pos ON pos.id = mtp.position_id
       WHERE mt.match_id = ?
       ORDER BY mtp.team_id, mtp.slot
@@ -102,15 +102,19 @@ class MatchTeamRepository {
 
   /// Construir jugadores de equipo
   MatchTeamPlayer _buildMatchTeamPlayer(Map<String, dynamic> m) {
+    final playerId = m['player_id'] as int?;
+    final playerName = m['player_name'] as String?;
+    final positionId = m['position_id'] as int?;
+
     return MatchTeamPlayer(
       id: m['mtp_id'] as int?,
       teamId: m['team_id'] as int,
-      playerId: m['player_id'] as int,
-      player: m['player_id'] != null ? Player(id: m['player_id'] as int, name: m['player_name'] as String, phone: m['player_phone'] as String) : null,
-      positionId: m['position_id'] as int?,
-      slot: m['slot'] as int? ?? 1,
-      position: m['position_id'] != null
-          ? Position(id: m['position_id'] as int, sportId: m['position_sport_id'] as int, name: m['position_name'] as String, shortName: m['position_short_name'] as String)
+      playerId: playerId ?? 0,
+      player: playerName != null ? Player(id: playerId, name: playerName, phone: m['player_phone'] as String?) : null,
+      positionId: positionId,
+      slot: (m['slot'] as int?) ?? 1,
+      position: positionId != null
+          ? Position(id: positionId, sportId: m['position_sport_id'] as int, name: (m['position_name'] as String?) ?? '', shortName: (m['position_short_name'] as String?) ?? '')
           : null,
     );
   }
