@@ -30,6 +30,64 @@ class _MatchTeamSoccerDiagramState extends State<MatchTeamSoccerDiagram> {
 
   /// Formaciones disponibles
   final Map<String, List<List<String>>> formations = {
+    "2-2": [
+      ["DEL", "DEL"],
+      ["DEF", "DEF"],
+      ["GK"],
+    ],
+    "3-2": [
+      ["DEL", "DEL"],
+      ["DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
+    "3-1-2": [
+      ["DEL", "DEL"],
+      ["MID"],
+      ["DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
+    "3-2-1": [
+      ["DEL"],
+      ["MID", "MID"],
+      ["DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
+    "3-3-1": [
+      ["DEL"],
+      ["MID", "MID", "MID"],
+      ["DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
+    "3-2-2": [
+      ["DEL", "DEL"],
+      ["MID", "MID"],
+      ["DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
+    "3-3-2": [
+      ["DEL", "DEL"],
+      ["MID", "MID", "MID"],
+      ["DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
+    "3-2-3": [
+      ["DEL", "DEL", "DEL"],
+      ["MID", "MID"],
+      ["DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
+    "4-3-2": [
+      ["DEL", "DEL"],
+      ["MID", "MID", "MID"],
+      ["DEF", "DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
+    "4-2-3": [
+      ["DEL", "DEL", "DEL"],
+      ["MID", "MID"],
+      ["DEF", "DEF", "DEF", "DEF"],
+      ["GK"],
+    ],
     "4-4-2": [
       ["DEL", "DEL"],
       ["MID", "MID", "MID", "MID"],
