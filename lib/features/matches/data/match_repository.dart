@@ -121,14 +121,14 @@ class MatchRepository {
     final result = await db.rawQuery(
       '''
         SELECT mp.id, mp.match_id, mp.player_id, mp.attended, mp.paid, p.name, p.phone
-        FROM match_players mp LEFT JOIN players p ON mp.player_id = p.id
+        FROM match_players mp INNER JOIN players p ON mp.player_id = p.id
         WHERE mp.match_id = ?
       ''',
       [matchId],
     );
 
     return result.map((map) {
-      final player = map['name'] != null ? Player(id: map['player_id'] as int, name: map['name'] as String, phone: map['phone'] as String?) : null;
+      final player = Player(id: map['player_id'] as int, name: map['name'] as String, phone: map['phone'] as String?);
 
       return MatchPlayer.fromMap(map, player: player);
     }).toList();

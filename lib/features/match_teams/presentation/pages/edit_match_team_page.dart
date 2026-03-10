@@ -34,6 +34,8 @@ class _EditMatchTeamPageState extends State<EditMatchTeamPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
     return Scaffold(
       appBar: AppBar(title: const Text("Editar equipo")),
       body: MatchTeamForm(

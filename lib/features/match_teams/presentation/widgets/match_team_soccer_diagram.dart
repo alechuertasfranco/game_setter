@@ -21,179 +21,220 @@ class MatchTeamSoccerDiagram extends StatefulWidget {
   State<MatchTeamSoccerDiagram> createState() => _MatchTeamSoccerDiagramState();
 }
 
+class Formation {
+  final String name;
+  final int slotStart;
+  final List<List<String>> lines;
+
+  const Formation({required this.name, required this.slotStart, required this.lines});
+}
+
 class _MatchTeamSoccerDiagramState extends State<MatchTeamSoccerDiagram> {
   List<Position> _positions = [];
   late List<MatchTeamPlayer> _teamPlayers;
 
   final Map<int, MatchPlayer> _playersMap = {};
-  final Set<int> _takenPlayers = {};
 
-  /// Formaciones disponibles
-  final Map<String, List<List<String>>> formations = {
-    "2-2": [
-      ["DEL", "DEL"],
-      ["DEF", "DEF"],
-      ["GK"],
-    ],
-    "3-2": [
-      ["DEL", "DEL"],
-      ["DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "3-1-2": [
-      ["DEL", "DEL"],
-      ["MID"],
-      ["DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "3-2-1": [
-      ["DEL"],
-      ["MID", "MID"],
-      ["DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "3-3-1": [
-      ["DEL"],
-      ["MID", "MID", "MID"],
-      ["DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "3-2-2": [
-      ["DEL", "DEL"],
-      ["MID", "MID"],
-      ["DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "3-3-2": [
-      ["DEL", "DEL"],
-      ["MID", "MID", "MID"],
-      ["DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "3-2-3": [
-      ["DEL", "DEL", "DEL"],
-      ["MID", "MID"],
-      ["DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "4-3-2": [
-      ["DEL", "DEL"],
-      ["MID", "MID", "MID"],
-      ["DEF", "DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "4-2-3": [
-      ["DEL", "DEL", "DEL"],
-      ["MID", "MID"],
-      ["DEF", "DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "4-4-2": [
-      ["DEL", "DEL"],
-      ["MID", "MID", "MID", "MID"],
-      ["DEF", "DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "4-3-3": [
-      ["DEL", "DEL", "DEL"],
-      ["MID", "MID", "MID"],
-      ["DEF", "DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "4-2-3-1": [
-      ["DEL"],
-      ["MID", "MID", "MID"],
-      ["MID", "MID"],
-      ["DEF", "DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
-    "3-2-3-2": [
-      ["DEL", "DEL"],
-      ["MID", "MID", "MID"],
-      ["MID", "MID"],
-      ["DEF", "DEF", "DEF"],
-      ["GK"],
-    ],
+  final Map<String, Formation> formations = {
+    "3-1-2": Formation(
+      name: "3-1-2",
+      slotStart: 100,
+      lines: [
+        ["DEL", "DEL"],
+        ["MID"],
+        ["DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "3-2-1": Formation(
+      name: "3-2-1",
+      slotStart: 200,
+      lines: [
+        ["DEL"],
+        ["MID", "MID"],
+        ["DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "4-3-3": Formation(
+      name: "4-3-3",
+      slotStart: 300,
+      lines: [
+        ["DEL", "DEL", "DEL"],
+        ["MID", "MID", "MID"],
+        ["DEF", "DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "4-2-3-1": Formation(
+      name: "4-2-3-1",
+      slotStart: 400,
+      lines: [
+        ["DEL"],
+        ["MID", "MID", "MID"],
+        ["MID", "MID"],
+        ["DEF", "DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "3-2-3-2": Formation(
+      name: "3-2-3-2",
+      slotStart: 500,
+      lines: [
+        ["DEL", "DEL"],
+        ["MID", "MID", "MID"],
+        ["MID", "MID"],
+        ["DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "3-3-1": Formation(
+      name: "3-3-1",
+      slotStart: 600,
+      lines: [
+        ["DEL"],
+        ["MID", "MID", "MID"],
+        ["DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "3-2-2": Formation(
+      name: "3-2-2",
+      slotStart: 700,
+      lines: [
+        ["DEL", "DEL"],
+        ["MID", "MID"],
+        ["DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "3-2": Formation(
+      name: "3-2",
+      slotStart: 800,
+      lines: [
+        ["DEL", "DEL"],
+        ["DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "2-3": Formation(
+      name: "2-3",
+      slotStart: 900,
+      lines: [
+        ["DEL", "DEL", "DEL"],
+        ["DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "2-2": Formation(
+      name: "2-2",
+      slotStart: 1000,
+      lines: [
+        ["DEL", "DEL"],
+        ["DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
+    "3-1": Formation(
+      name: "3-1",
+      slotStart: 1100,
+      lines: [
+        ["DEL"],
+        ["DEF", "DEF", "DEF"],
+        ["GK"],
+      ],
+    ),
   };
 
   late String selectedFormation;
 
+  String _detectFormationFromSlots() {
+    if (_teamPlayers.isEmpty) return formations.keys.first;
+
+    final slot = _teamPlayers.first.slot;
+
+    return formations.values.firstWhereOrNull((f) => slot >= f.slotStart && slot < f.slotStart + 20)?.name ?? formations.keys.first;
+  }
+
   @override
   void initState() {
     super.initState();
-    selectedFormation = "4-4-2";
     _teamPlayers = [...widget.players];
+    selectedFormation = _detectFormationFromSlots();
     _loadInitialData();
+  }
+
+  @override
+  void didUpdateWidget(covariant MatchTeamSoccerDiagram oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.availablePlayers != widget.availablePlayers) {
+      _loadInitialData();
+    }
+
+    if (oldWidget.players != widget.players) {
+      setState(() {
+        _teamPlayers = [...widget.players];
+        selectedFormation = _detectFormationFromSlots();
+      });
+    }
   }
 
   Future<void> _loadInitialData() async {
     final positions = await PositionRepository().getByMatchId(widget.match.id!);
 
-    final taken = await MatchPlayerRepository().getPlayersTaken(matchId: widget.match.id!);
-
     final players = <int, MatchPlayer>{};
 
     for (final p in widget.availablePlayers) {
-      final playerPositions = await MatchPlayerRepository().getPlayerPositionsForMatch(playerId: p.playerId, sportId: widget.match.sportId);
-      players[p.playerId] = p.copyWith(positions: playerPositions);
+      final pos = await MatchPlayerRepository().getPlayerPositionsForMatch(playerId: p.playerId, sportId: widget.match.sportId);
+
+      players[p.playerId] = p.copyWith(positions: pos, player: p.player);
     }
+
+    if (!mounted) return;
 
     setState(() {
       _positions = positions;
-      _playersMap.addAll(players);
-      _takenPlayers.addAll(taken);
+      _playersMap
+        ..clear()
+        ..addAll(players);
     });
   }
 
   String _firstName(Player p) {
-    final name = p.name.trim();
-    if (name.isEmpty) return "";
-
-    final parts = name.split(RegExp(r"\s+"));
-    return parts.first;
+    final parts = p.name.trim().split(RegExp(r"\s+"));
+    return parts.isEmpty ? "" : parts.first;
   }
 
-  Position? _positionByCode(String code) {
-    return _positions.firstWhereOrNull((p) => p.shortName == code);
-  }
+  Position? _positionByCode(String code) => _positions.firstWhereOrNull((p) => p.shortName == code);
 
-  MatchTeamPlayer? _playerInSlot(Position pos, int slot) {
-    return _teamPlayers.firstWhereOrNull((e) => e.positionId == pos.id && e.slot == slot);
-  }
+  MatchTeamPlayer? _playerInSlot(int slot) => _teamPlayers.firstWhereOrNull((e) => e.slot == slot);
 
   Future<void> _selectPlayer(Position pos, int slot) async {
-    final filteredPlayers = _playersMap.values.where((mp) {
-      /// verificar si ya está usado
-      final alreadyUsed = _teamPlayers.any((tp) => tp.playerId == mp.playerId);
-
-      /// verificar si puede jugar esta posición
-      final canPlayPosition = mp.positions.any((p) => p.id == pos.id);
-      final result = canPlayPosition && !alreadyUsed;
-      return result;
+    final players = _playersMap.values.where((mp) {
+      final used = _teamPlayers.any((tp) => tp.playerId == mp.playerId);
+      final canPlay = mp.positions.any((p) => p.id == pos.id);
+      return canPlay && !used;
     }).toList();
 
     final result = await showModalBottomSheet<Player>(
       context: context,
       showDragHandle: true,
-      builder: (_) => _PlayerSelector(players: filteredPlayers),
+      builder: (_) => _PlayerSelector(players: players),
     );
 
     if (result == null) return;
 
-    _teamPlayers.removeWhere((p) => p.positionId == pos.id && p.slot == slot);
-
     setState(() {
+      _teamPlayers.removeWhere((p) => p.slot == slot);
       _teamPlayers.add(MatchTeamPlayer(id: null, teamId: 0, playerId: result.id!, positionId: pos.id, slot: slot, position: pos));
     });
 
     widget.onPlayersChanged(_teamPlayers);
   }
 
-  void _clear(Position pos, int slot) {
-    setState(() {
-      _teamPlayers.removeWhere((p) => p.positionId == pos.id && p.slot == slot);
-    });
-
+  void _clear(int slot) {
+    setState(() => _teamPlayers.removeWhere((p) => p.slot == slot));
     widget.onPlayersChanged(_teamPlayers);
   }
 
@@ -201,25 +242,20 @@ class _MatchTeamSoccerDiagramState extends State<MatchTeamSoccerDiagram> {
     final pos = _positionByCode(code);
     if (pos == null) return const SizedBox();
 
-    final playerItem = _playerInSlot(pos, slot);
-    final hasPlayer = playerItem != null;
+    final playerItem = _playerInSlot(slot);
 
     String label = pos.shortName;
     Color color = Colors.white;
 
-    if (hasPlayer) {
+    if (playerItem != null) {
       final mp = _playersMap[playerItem.playerId];
-      final player = mp?.player;
-
-      if (player != null) {
-        label = _firstName(player);
-        color = Colors.lightGreen;
-      }
+      label = mp?.player != null ? _firstName(mp!.player!) : "P${playerItem.playerId}";
+      color = Colors.lightGreen;
     }
 
     return GestureDetector(
       onTap: () => _selectPlayer(pos, slot),
-      onLongPress: hasPlayer ? () => _clear(pos, slot) : null,
+      onLongPress: playerItem != null ? () => _clear(slot) : null,
       child: _PlayerCircle(label: label, color: color),
     );
   }
@@ -231,25 +267,20 @@ class _MatchTeamSoccerDiagramState extends State<MatchTeamSoccerDiagram> {
     }
 
     final formation = formations[selectedFormation]!;
-
-    int slot = 1;
+    int slot = formation.slotStart;
 
     return Column(
       children: [
-        /// CAMPO
         Expanded(
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(color: const Color(0xFF2E7D32), borderRadius: BorderRadius.circular(16)),
             child: Stack(
               children: [
-                /// Líneas del campo
                 Positioned.fill(child: CustomPaint(painter: SoccerFieldPainter())),
-
-                /// Jugadores
                 Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: formation.map((line) {
+                  children: formation.lines.map((line) {
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: line.map((code) {
@@ -264,8 +295,6 @@ class _MatchTeamSoccerDiagramState extends State<MatchTeamSoccerDiagram> {
             ),
           ),
         ),
-
-        /// BOTÓN CAMBIAR FORMACIÓN
         Padding(
           padding: const EdgeInsets.only(bottom: 20),
           child: ElevatedButton.icon(
@@ -275,19 +304,13 @@ class _MatchTeamSoccerDiagramState extends State<MatchTeamSoccerDiagram> {
               final result = await showModalBottomSheet<String>(
                 context: context,
                 showDragHandle: true,
-                builder: (_) {
-                  return ListView(
-                    children: formations.keys.map((f) {
-                      return ListTile(title: Text(f), onTap: () => Navigator.pop(context, f));
-                    }).toList(),
-                  );
-                },
+                builder: (_) => ListView(
+                  children: formations.keys.map((f) => ListTile(title: Text(f), onTap: () => Navigator.pop(context, f))).toList(),
+                ),
               );
 
               if (result != null) {
-                setState(() {
-                  selectedFormation = result;
-                });
+                setState(() => selectedFormation = result);
               }
             },
           ),
@@ -352,16 +375,9 @@ class SoccerFieldPainter extends CustomPainter {
 
     final midY = size.height / 2;
 
-    /// Línea central
     canvas.drawLine(Offset(0, midY), Offset(size.width, midY), paint);
-
-    /// Círculo central
     canvas.drawCircle(Offset(size.width / 2, midY), 40, paint);
-
-    /// Área superior
     canvas.drawRect(Rect.fromCenter(center: Offset(size.width / 2, 40), width: 200, height: 80), paint);
-
-    /// Área inferior
     canvas.drawRect(Rect.fromCenter(center: Offset(size.width / 2, size.height - 40), width: 200, height: 80), paint);
   }
 
