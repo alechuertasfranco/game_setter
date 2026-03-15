@@ -2,108 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 
 import 'package:game_setter/features/match_teams/domain/entities/match_team_player.dart';
-import 'package:game_setter/features/matches/data/match_player_repository.dart';
-import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/domain/entities/match_player.dart';
-import 'package:game_setter/features/players/domain/entities/player.dart';
-import 'package:game_setter/features/sports/data/position_repository.dart';
 import 'package:game_setter/features/sports/domain/entities/position.dart';
 
-class MatchTeamVolleyballDiagram extends StatefulWidget {
-  final Match match;
-  final List<MatchTeamPlayer> players;
-  final List<MatchPlayer> availablePlayers;
-  final void Function(List<MatchTeamPlayer>) onPlayersChanged;
+class MatchTeamVolleyballDiagram extends StatelessWidget {
+  final List<Position> positions;
+  final List<MatchTeamPlayer> teamPlayers;
+  final Map<int, MatchPlayer> playersMap;
 
-  const MatchTeamVolleyballDiagram({super.key, required this.match, required this.players, required this.availablePlayers, required this.onPlayersChanged});
+  final bool use51Formation;
+  final bool includeLibero;
 
-  @override
-  State<MatchTeamVolleyballDiagram> createState() => _MatchTeamVolleyballDiagramState();
-}
+  final void Function(Position pos, int slot)? onSlotTap;
+  final void Function(Position pos, int slot)? onSlotLongPress;
 
-class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram> {
-  List<Position> _positions = [];
-  late List<MatchTeamPlayer> _teamPlayers;
+  const MatchTeamVolleyballDiagram({
+    super.key,
+    required this.positions,
+    required this.teamPlayers,
+    required this.playersMap,
+    required this.use51Formation,
+    required this.includeLibero,
+    this.onSlotTap,
+    this.onSlotLongPress,
+  });
 
-  final Map<int, MatchPlayer> _playersMap = {};
-  final Set<int> _takenPlayers = {};
+  Position? _positionByCode(String code) => positions.firstWhereOrNull((p) => p.shortName == code);
 
-  bool use51Formation = false;
-  bool includeLibero = false;
+  MatchTeamPlayer? _playerInSlot(Position pos, int slot) => teamPlayers.firstWhereOrNull((e) => e.positionId == pos.id && e.slot == slot);
 
-  @override
-  void initState() {
-    super.initState();
-    _teamPlayers = [...widget.players];
-    _loadInitialData();
+  String _firstName(String name) {
+    final parts = name.trim().split(RegExp(r"\s+"));
+    return parts.isEmpty ? "" : parts.first;
   }
 
-  Future<void> _loadInitialData() async {
-    final positions = await PositionRepository().getByMatchId(widget.match.id!);
-
-    final taken = await MatchPlayerRepository().getPlayersTaken(matchId: widget.match.id!);
-
-    final players = <int, MatchPlayer>{};
-
-    for (final p in widget.availablePlayers) {
-      final playerPositions = await MatchPlayerRepository().getPlayerPositionsForMatch(playerId: p.playerId, sportId: widget.match.sportId);
-
-      players[p.playerId] = p.copyWith(positions: playerPositions);
-    }
-
-    setState(() {
-      _positions = positions;
-      _playersMap.addAll(players);
-      _takenPlayers.addAll(taken);
-    });
-  }
-
-  Position? _positionByCode(String code) {
-    return _positions.firstWhereOrNull((p) => p.shortName == code);
-  }
-
-  MatchTeamPlayer? _playerInSlot(Position pos, int slot) {
-    return _teamPlayers.firstWhereOrNull((e) => e.positionId == pos.id && e.slot == slot);
-  }
-
-  String _firstName(Player p) {
-    final name = p.name.trim();
-    if (name.isEmpty) return "";
-    return name.split(" ").first;
-  }
-
-  Future<void> _selectPlayer(Position pos, int slot) async {
-    final filteredPlayers = _playersMap.values.where((mp) {
-      final alreadyUsed = _teamPlayers.any((tp) => tp.playerId == mp.playerId);
-
-      final canPlayPosition = mp.positions.any((p) => p.id == pos.id);
-
-      return canPlayPosition && !alreadyUsed;
-    }).toList();
-
-    final result = await showModalBottomSheet<Player>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => _PlayerSelector(players: filteredPlayers),
-    );
-
-    if (result == null) return;
-
-    _teamPlayers.removeWhere((p) => p.positionId == pos.id && p.slot == slot);
-
-    setState(() {
-      _teamPlayers.add(MatchTeamPlayer(id: null, teamId: 0, playerId: result.id!, positionId: pos.id, slot: slot, position: pos));
-    });
-
-    widget.onPlayersChanged(_teamPlayers);
-  }
-
-  void _clear(Position pos, int slot) {
-    setState(() {
-      _teamPlayers.removeWhere((p) => p.positionId == pos.id && p.slot == slot);
-    });
-
-    widget.onPlayersChanged(_teamPlayers);
+  bool _teamHasPosition(String code) {
+    final pos = _positionByCode(code);
+    if (pos == null) return false;
+    return teamPlayers.any((p) => p.positionId == pos.id);
   }
 
   Widget _buildSlot(String code, int slot) {
@@ -111,106 +47,69 @@ class _MatchTeamVolleyballDiagramState extends State<MatchTeamVolleyballDiagram>
     if (pos == null) return const SizedBox();
 
     final playerItem = _playerInSlot(pos, slot);
-    final hasPlayer = playerItem != null;
 
     String label = pos.shortName;
     Color color = Colors.white;
 
-    if (hasPlayer) {
-      final mp = _playersMap[playerItem.playerId];
-      final player = mp?.player;
+    if (playerItem != null) {
+      final mp = playersMap[playerItem.playerId];
 
-      if (player != null) {
-        label = _firstName(player);
+      if (mp?.player != null) {
+        label = _firstName(mp!.player!.name);
         color = Colors.orange.shade300;
       }
     }
 
     return GestureDetector(
-      onTap: () => _selectPlayer(pos, slot),
-      onLongPress: hasPlayer ? () => _clear(pos, slot) : null,
+      onTap: () => onSlotTap?.call(pos, slot),
+      onLongPress: playerItem != null ? () => onSlotLongPress?.call(pos, slot) : null,
       child: _PlayerCircle(label: label, color: color),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_positions.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     int slot = 1;
 
-    return Column(
-      children: [
-        /// HEADER
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            DropdownButton<bool>(
-              value: use51Formation,
-              items: const [
-                DropdownMenuItem(value: true, child: Text("Formación 5–1")),
-                DropdownMenuItem(value: false, child: Text("Formación 4–2")),
-              ],
-              onChanged: (v) => setState(() => use51Formation = v!),
-            ),
-
-            Row(
-              children: [
-                const Text("Líbero"),
-                Switch(value: includeLibero, onChanged: (v) => setState(() => includeLibero = v)),
-              ],
-            ),
-          ],
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        border: Border(
+          left: BorderSide(color: Colors.orange.shade500, width: 32),
+          right: BorderSide(color: Colors.orange.shade500, width: 32),
+          bottom: BorderSide(color: Colors.orange.shade500, width: 40),
         ),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Stack(
+        children: [
+          Positioned.fill(child: CustomPaint(painter: VolleyballCourtPainter())),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              const SizedBox(height: 12),
 
-        /// CANCHA
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              border: Border(
-                left: BorderSide(color: Colors.orange.shade500, width: 32),
-                right: BorderSide(color: Colors.orange.shade500, width: 32),
-                bottom: BorderSide(color: Colors.orange.shade500, width: 40),
+              // FRONT ROW
+              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildSlot("PTA", slot++), _buildSlot("CTR", slot++), _buildSlot("ARM", slot++)]),
+
+              const SizedBox(height: 12),
+              Container(height: 2, width: double.infinity, color: Colors.orange.shade300),
+              const SizedBox(height: 24),
+
+              // BACK ROW
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [_buildSlot(use51Formation && _teamHasPosition("OP") ? "OP" : "ARM", slot++), _buildSlot("CTR", slot++), _buildSlot("PTA", slot++)],
               ),
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Stack(
-              children: [
-                Positioned.fill(child: CustomPaint(painter: VolleyballCourtPainter())),
 
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              const SizedBox(height: 24),
 
-                  children: [
-                    /// NET SPACE
-                    const SizedBox(height: 12),
-
-                    /// FRONT ROW
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildSlot("PTA", slot++), _buildSlot("CTR", slot++), _buildSlot("ARM", slot++)]),
-                    const SizedBox(height: 12),
-
-                    /// ATTACK LINE
-                    Container(height: 2, width: double.infinity, color: Colors.orange.shade300),
-                    const SizedBox(height: 24),
-
-                    /// BACK ROW
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [_buildSlot(use51Formation ? "OP" : "ARM", slot++), _buildSlot("CTR", slot++), _buildSlot("PTA", slot++)],
-                    ),
-                    const SizedBox(height: 24),
-                    if (includeLibero && _positions.any((p) => p.shortName == "LIB")) Row(mainAxisAlignment: MainAxisAlignment.center, children: [_buildSlot("LIB", slot++)]),
-                  ],
-                ),
-              ],
-            ),
+              if (includeLibero && positions.any((p) => p.shortName == "LIB")) Row(mainAxisAlignment: MainAxisAlignment.center, children: [_buildSlot("LIB", slot++)]),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -234,28 +133,6 @@ class _PlayerCircle extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-    );
-  }
-}
-
-class _PlayerSelector extends StatelessWidget {
-  final List<MatchPlayer> players;
-
-  const _PlayerSelector({required this.players});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: players.map((mp) {
-        return ListTile(
-          leading: const Icon(Icons.person),
-          title: Text(mp.player?.name ?? "Jugador"),
-          subtitle: Text(mp.positions.map((p) => p.shortName).join(", ")),
-          trailing: const Icon(Icons.add_circle_outline),
-          onTap: () => Navigator.pop(context, mp.player),
-        );
-      }).toList(),
     );
   }
 }

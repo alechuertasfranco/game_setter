@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:game_setter/features/match_teams/domain/entities/match_team.dart';
 import 'package:game_setter/features/match_teams/presentation/pages/edit_match_team_page.dart';
 import 'package:game_setter/features/match_teams/presentation/pages/match_teams_page.dart';
+import 'package:game_setter/features/match_teams/presentation/pages/match_teams_share_page.dart';
 import 'package:game_setter/features/notifications/presentarion/pages/send_notification_page.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:game_setter/features/courts/domain/entities/court.dart';
@@ -70,6 +71,10 @@ class GameSetterApp extends StatelessWidget {
         if (settings.name == '/matchTeams') {
           final match = settings.arguments as Match;
           return MaterialPageRoute(builder: (_) => MatchTeamsPage(match: match));
+        }
+        if (settings.name == '/matchTeamsShare') {
+          final match = settings.arguments as Match;
+          return MaterialPageRoute(builder: (_) => MatchTeamsSharePage(match: match));
         }
         if (settings.name == '/matchNotifications') {
           final match = settings.arguments as Match;

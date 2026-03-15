@@ -1,11 +1,11 @@
 // lib/features/match_teams/presentation/widgets/match_team_form.dart
 import 'package:flutter/material.dart';
-import 'package:game_setter/features/match_teams/presentation/widgets/match_team_soccer_diagram.dart';
+import 'package:game_setter/features/match_teams/presentation/widgets/match_team_soccer_form.dart';
+import 'package:game_setter/features/match_teams/presentation/widgets/match_team_volleyball_form.dart';
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/domain/entities/match_player.dart';
 import 'package:game_setter/features/match_teams/domain/entities/match_team.dart';
 import 'package:game_setter/features/match_teams/domain/entities/match_team_player.dart';
-import 'package:game_setter/features/match_teams/presentation/widgets/match_team_volleyball_diagram.dart';
 
 class MatchTeamForm extends StatefulWidget {
   final Function(MatchTeam team) onSave;
@@ -54,10 +54,10 @@ class _MatchTeamFormState extends State<MatchTeamForm> {
   Widget _buildSportDiagram() {
     switch (widget.match.sportId) {
       case 1: // Vóley
-        return MatchTeamVolleyballDiagram(match: widget.match, players: players, availablePlayers: widget.availablePlayers, onPlayersChanged: _updatePlayers);
+        return MatchTeamVolleyballForm(match: widget.match, players: players, availablePlayers: widget.availablePlayers, onPlayersChanged: _updatePlayers);
 
       case 2: // Fútbol
-        return MatchTeamSoccerDiagram(match: widget.match, players: players, availablePlayers: widget.availablePlayers, onPlayersChanged: _updatePlayers);
+        return MatchTeamSoccerForm(match: widget.match, players: players, availablePlayers: widget.availablePlayers, onPlayersChanged: _updatePlayers);
 
       default:
         return const Center(child: Text("Deporte no soportado"));
