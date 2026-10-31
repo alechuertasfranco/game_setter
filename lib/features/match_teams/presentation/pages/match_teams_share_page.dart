@@ -30,10 +30,8 @@ class _MatchTeamsSharePageState extends State<MatchTeamsSharePage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
-      appBar: AppBar(title: Text("Compartir equipos", style: textTheme.titleMedium)),
+      appBar: AppBar(title: const Text("Compartir equipos")),
       body: FutureBuilder<List<MatchTeam>>(
         future: teamsFuture,
         builder: (context, snapshot) {

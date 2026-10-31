@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_setter/core/update/update_dialog.dart';
 import 'package:game_setter/features/matches/presentation/pages/matches_page.dart';
 import 'package:game_setter/features/players/presentation/pages/players_page.dart';
 import 'package:game_setter/features/courts/presentation/pages/courts_page.dart';
@@ -11,9 +12,22 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  /// Se revisa una sola vez por sesión, aunque HomePage se vuelva a construir.
+  static bool _updateChecked = false;
+
   int _currentIndex = 0;
 
   final pages = const [MatchesPage(), PlayersPage(), CourtsPage()];
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (!_updateChecked) {
+      _updateChecked = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => checkForUpdateAndPrompt(context));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
+import 'package:game_setter/core/utils/date_formatter.dart';
+
 import 'package:game_setter/features/matches/domain/entities/match.dart';
 import 'package:game_setter/features/matches/domain/entities/match_player.dart';
 import 'package:game_setter/features/sports/domain/entities/sport.dart';
@@ -81,6 +83,11 @@ class _MatchFormState extends State<MatchForm> {
 
     availablePlayers = await playerRepository.getPlayersBySport(id);
     setState(() => isLoading = false);
+  }
+
+  String? get _displayDate {
+    final parsed = date != null ? DateTime.tryParse(date!) : null;
+    return parsed != null ? DateFormatter.formatDate(parsed) : date;
   }
 
   Future<void> _pickDate() async {
@@ -292,7 +299,7 @@ class _MatchFormState extends State<MatchForm> {
                           Row(
                             children: [
                               Expanded(
-                                child: _buildDateField(label: "Fecha", value: date, onTap: _pickDate),
+                                child: _buildDateField(label: "Fecha", value: _displayDate, onTap: _pickDate),
                               ),
                               const SizedBox(width: 12),
                               Expanded(

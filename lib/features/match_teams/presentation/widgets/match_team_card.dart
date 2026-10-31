@@ -66,7 +66,8 @@ class MatchTeamCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final subtitle = '${players.length} jugador(es)';
+    final count = players.length == 1 ? '1 jugador' : '${players.length} jugadores';
+    final subtitle = team.formation != null ? 'Formación ${team.formation} · $count' : count;
 
     return Dismissible(
       key: ValueKey(team.id),
