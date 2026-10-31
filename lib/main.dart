@@ -31,6 +31,13 @@ class GameSetterApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        // Misma barra superior en todas las pantallas (antes solo las principales eran azul-gris).
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.blueGrey,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          titleTextStyle: GoogleFonts.bitter(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white),
+        ),
         textTheme: TextTheme(
           // Títulos grandes (pantallas, headers principales)
           displayLarge: GoogleFonts.robotoSlab(fontWeight: FontWeight.w700, fontSize: 36), // Uso: Splash screens, landing principal

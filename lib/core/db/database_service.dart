@@ -19,7 +19,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 6, // NUEVA VERSIÓN
+      version: 7, // v7: match_teams.formation
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -120,6 +120,7 @@ class DatabaseService {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       match_id INTEGER NOT NULL,
       name TEXT NOT NULL,
+      formation TEXT,
       FOREIGN KEY(match_id) REFERENCES matches(id) ON DELETE CASCADE
     );
   ''');
@@ -181,7 +182,68 @@ class DatabaseService {
     await db.insert('positions', {'sport_id': basketId, 'name': 'Pívot', 'short_name': 'C'});
   }
 
+  /// Se ejecuta automáticamente la primera vez que se abre una versión nueva
+  /// de la app con un número de versión de BD mayor. Nunca borra datos.
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    // Aquí se podrían agregar migraciones futuras si la versión cambia
+    if (oldVersion < 7) {
+      await _addColumnIfMissing(db, 'match_teams', 'formation', 'TEXT');
+      await _backfillTeamFormations(db);
+    }
   }
+
+  Future<void> _addColumnIfMissing(Database db, String table, String column, String type) async {
+    final columns = await db.rawQuery('PRAGMA table_info($table)');
+    final exists = columns.any((c) => c['name'] == column);
+    if (!exists) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $type');
+    }
+  }
+
+  /// Completa la formación de los equipos creados antes de la v7.
+  /// Vóley: 5-1 si tiene un Opuesto, si no 4-2. Fútbol: se deduce por el slot.
+  Future<void> _backfillTeamFormations(Database db) async {
+    final teams = await db.rawQuery('''
+      SELECT mt.id, m.sport_id,
+             MIN(mtp.slot) AS min_slot,
+             SUM(CASE WHEN pos.short_name = 'OP' THEN 1 ELSE 0 END) AS op_count
+      FROM match_teams mt
+      INNER JOIN matches m ON m.id = mt.match_id
+      LEFT JOIN match_team_players mtp ON mtp.team_id = mt.id
+      LEFT JOIN positions pos ON pos.id = mtp.position_id
+      WHERE mt.formation IS NULL
+      GROUP BY mt.id, m.sport_id
+    ''');
+
+    for (final t in teams) {
+      final sportId = t['sport_id'] as int?;
+      String? formation;
+
+      if (sportId == 1) {
+        formation = ((t['op_count'] as int?) ?? 0) > 0 ? '5-1' : '4-2';
+      } else if (sportId == 2) {
+        final minSlot = t['min_slot'] as int?;
+        if (minSlot != null && minSlot >= 100) {
+          formation = _soccerFormationBySlot[(minSlot ~/ 100) * 100];
+        }
+      }
+
+      if (formation != null) {
+        await db.update('match_teams', {'formation': formation}, where: 'id = ?', whereArgs: [t['id']]);
+      }
+    }
+  }
+
+  static const _soccerFormationBySlot = {
+    100: '3-1-2',
+    200: '3-2-1',
+    300: '4-3-3',
+    400: '4-2-3-1',
+    500: '3-2-3-2',
+    600: '3-3-1',
+    700: '3-2-2',
+    800: '3-2',
+    900: '2-3',
+    1000: '2-2',
+    1100: '3-1',
+  };
 }

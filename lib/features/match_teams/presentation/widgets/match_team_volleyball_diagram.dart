@@ -1,27 +1,37 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 
 import 'package:game_setter/features/match_teams/domain/entities/match_team_player.dart';
+import 'package:game_setter/features/match_teams/domain/formations/volleyball_formations.dart';
 import 'package:game_setter/features/matches/domain/entities/match_player.dart';
 import 'package:game_setter/features/sports/domain/entities/position.dart';
 
+import 'player_slot.dart';
+
+const _floorColor = Color(0xFF2B5F7E);
+const _courtColor = Color(0xFFEFA25A);
+const _slotAccent = Color(0xFF1565C0);
+
+/// Media cancha de vóley vista desde arriba: la red arriba, la línea de ataque
+/// a un tercio y el líbero (si hay) en la zona libre de abajo.
 class MatchTeamVolleyballDiagram extends StatelessWidget {
+  final VolleyballFormation formation;
   final List<Position> positions;
   final List<MatchTeamPlayer> teamPlayers;
   final Map<int, MatchPlayer> playersMap;
-
-  final bool use51Formation;
   final bool includeLibero;
 
   final void Function(Position pos, int slot)? onSlotTap;
-  final void Function(Position pos, int slot)? onSlotLongPress;
+  final void Function(int slot)? onSlotLongPress;
 
   const MatchTeamVolleyballDiagram({
     super.key,
+    required this.formation,
     required this.positions,
     required this.teamPlayers,
     required this.playersMap,
-    required this.use51Formation,
     required this.includeLibero,
     this.onSlotTap,
     this.onSlotLongPress,
@@ -29,125 +39,104 @@ class MatchTeamVolleyballDiagram extends StatelessWidget {
 
   Position? _positionByCode(String code) => positions.firstWhereOrNull((p) => p.shortName == code);
 
-  MatchTeamPlayer? _playerInSlot(Position pos, int slot) => teamPlayers.firstWhereOrNull((e) => e.positionId == pos.id && e.slot == slot);
-
-  String _firstName(String name) {
-    final parts = name.trim().split(RegExp(r"\s+"));
-    return parts.isEmpty ? "" : parts.first;
+  String? _playerName(MatchTeamPlayer? tp) {
+    if (tp == null) return null;
+    return playersMap[tp.playerId]?.player?.name ?? tp.player?.name ?? "Jugador";
   }
 
-  bool _teamHasPosition(String code) {
-    final pos = _positionByCode(code);
-    if (pos == null) return false;
-    return teamPlayers.any((p) => p.positionId == pos.id);
-  }
+  Widget _slot(VolleySlot vs, double size) {
+    final pos = _positionByCode(vs.code);
+    if (pos == null) return SizedBox(width: size, height: size);
 
-  Widget _buildSlot(String code, int slot) {
-    final pos = _positionByCode(code);
-    if (pos == null) return const SizedBox();
+    final tp = playerInSlot(teamPlayers, vs.slot);
 
-    final playerItem = _playerInSlot(pos, slot);
-
-    String label = pos.shortName;
-    Color color = Colors.white;
-
-    if (playerItem != null) {
-      final mp = playersMap[playerItem.playerId];
-
-      if (mp?.player != null) {
-        label = _firstName(mp!.player!.name);
-        color = Colors.orange.shade300;
-      }
-    }
-
-    return GestureDetector(
-      onTap: () => onSlotTap?.call(pos, slot),
-      onLongPress: playerItem != null ? () => onSlotLongPress?.call(pos, slot) : null,
-      child: _PlayerCircle(label: label, color: color),
+    return PlayerSlotCircle(
+      size: size,
+      positionCode: vs.code,
+      playerName: _playerName(tp),
+      accent: _slotAccent,
+      onTap: onSlotTap == null ? null : () => onSlotTap!(pos, vs.slot),
+      onLongPress: tp != null && onSlotLongPress != null ? () => onSlotLongPress!(vs.slot) : null,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    int slot = 1;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight.isFinite ? constraints.maxHeight : width * 1.25;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        border: Border(
-          left: BorderSide(color: Colors.orange.shade500, width: 32),
-          right: BorderSide(color: Colors.orange.shade500, width: 32),
-          bottom: BorderSide(color: Colors.orange.shade500, width: 40),
-        ),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: VolleyballCourtPainter())),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const SizedBox(height: 12),
+        const sidePad = 16.0;
+        const topPad = 22.0;
+        final showLibero = includeLibero && _positionByCode(liberoSlot.code) != null;
 
-              // FRONT ROW
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildSlot("PTA", slot++), _buildSlot("CTR", slot++), _buildSlot("ARM", slot++)]),
+        final size = math.min(72.0, math.min((width - sidePad * 2) / 3.6, height / (showLibero ? 5.2 : 4.0)));
+        final bottomPad = showLibero ? size + 28 : 16.0;
 
-              const SizedBox(height: 12),
-              Container(height: 2, width: double.infinity, color: Colors.orange.shade300),
-              const SizedBox(height: 24),
+        final court = Rect.fromLTRB(sidePad, topPad, width - sidePad, height - bottomPad);
 
-              // BACK ROW
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [_buildSlot(use51Formation && _teamHasPosition("OP") ? "OP" : "ARM", slot++), _buildSlot("CTR", slot++), _buildSlot("PTA", slot++)],
-              ),
+        final columnsX = [court.left + court.width / 6, court.center.dx, court.right - court.width / 6];
+        final frontY = court.top + court.height / 6;
+        final backY = court.top + court.height * 2 / 3;
 
-              const SizedBox(height: 24),
+        Widget placed(VolleySlot vs, double cx, double cy) {
+          return Positioned(left: cx - size / 2, top: cy - size / 2, child: _slot(vs, size));
+        }
 
-              if (includeLibero && positions.any((p) => p.shortName == "LIB")) Row(mainAxisAlignment: MainAxisAlignment.center, children: [_buildSlot("LIB", slot++)]),
-            ],
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: Stack(
+              children: [
+                Positioned.fill(child: CustomPaint(painter: VolleyballCourtPainter(court: court))),
+                for (int i = 0; i < formation.front.length; i++) placed(formation.front[i], columnsX[i], frontY),
+                for (int i = 0; i < formation.back.length; i++) placed(formation.back[i], columnsX[i], backY),
+                if (showLibero) placed(liberoSlot, court.center.dx, court.bottom + 14 + size / 2),
+              ],
+            ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlayerCircle extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _PlayerCircle({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        border: Border.all(color: Colors.black26),
-        boxShadow: const [BoxShadow(blurRadius: 4, offset: Offset(0, 2), color: Colors.black26)],
-      ),
-      alignment: Alignment.center,
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        );
+      },
     );
   }
 }
 
 class VolleyballCourtPainter extends CustomPainter {
+  final Rect court;
+
+  VolleyballCourtPainter({required this.court});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black54
+    canvas.drawRect(Offset.zero & size, Paint()..color = _floorColor);
+    canvas.drawRect(court, Paint()..color = _courtColor);
+
+    final line = Paint()
+      ..color = Colors.white
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
-    canvas.drawLine(Offset(0, 0), Offset(size.width, 0), paint);
+    canvas.drawRect(court, line);
+
+    // Línea de ataque (3 m de 9 m).
+    final attackY = court.top + court.height / 3;
+    canvas.drawLine(Offset(court.left, attackY), Offset(court.right, attackY), line);
+
+    // Red con sus postes.
+    final net = Paint()
+      ..color = const Color(0xFF1F2933)
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(court.left - 8, court.top), Offset(court.right + 8, court.top), net);
+
+    final post = Paint()..color = const Color(0xFF1F2933);
+    canvas.drawCircle(Offset(court.left - 8, court.top), 5, post);
+    canvas.drawCircle(Offset(court.right + 8, court.top), 5, post);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant VolleyballCourtPainter oldDelegate) => oldDelegate.court != court;
 }

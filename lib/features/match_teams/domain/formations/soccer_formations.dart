@@ -122,6 +122,25 @@ final Map<String, Formation> formations = {
 
 Formation detectFormationFromSlots(List<MatchTeamPlayer> players) {
   if (players.isEmpty) return formations.values.first;
-  final slot = players.first.slot;
+  final slot = players.map((p) => p.slot).reduce((a, b) => a < b ? a : b);
   return formations.values.firstWhereOrNull((f) => slot >= f.slotStart && slot < f.slotStart + 20) ?? formations.values.first;
+}
+
+/// Formación guardada en el equipo o, si no hay (equipos antiguos), la deducida por los slots.
+Formation resolveSoccerFormation(String? saved, List<MatchTeamPlayer> players) {
+  return (saved != null ? formations[saved] : null) ?? detectFormationFromSlots(players);
+}
+
+extension FormationSlots on Formation {
+  /// Lista plana (slot, código) en el orden en que se dibujan las líneas.
+  List<(int, String)> get slots {
+    final result = <(int, String)>[];
+    var slot = slotStart;
+    for (final line in lines) {
+      for (final code in line) {
+        result.add((slot++, code));
+      }
+    }
+    return result;
+  }
 }
