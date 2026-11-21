@@ -14,12 +14,8 @@ class AddMatchPage extends StatelessWidget {
         onSave: (Match match) async {
           // Insertar partido vacío → devuelve ID
           final matchId = await MatchRepository().insertMatch(match);
-          // Limpiar jugadores previos (solo por consistencia)
-          await MatchRepository().clearMatchPlayers(matchId);
-          // Insertar jugadores
-          for (final mp in match.players) {
-            await MatchRepository().assignPlayerToMatch(matchId, mp);
-          }
+          // Insertar jugadores (crea los invitados nuevos)
+          await MatchRepository().saveMatchPlayers(matchId, match.players);
         },
       ),
     );

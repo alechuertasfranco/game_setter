@@ -8,10 +8,14 @@ class Player {
   final List<PlayerSport>? sports;
   String? subtitle;
 
-  Player({this.id, required this.name, this.phone, this.sports, this.position, this.subtitle});
+  /// Invitado: jugador de un solo partido. No aparece en la lista de Jugadores
+  /// y puede ocupar cualquier posición en la formación de equipos.
+  final bool isGuest;
+
+  Player({this.id, required this.name, this.phone, this.sports, this.position, this.subtitle, this.isGuest = false});
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'name': name, 'phone': phone, 'position': position};
+    return {'id': id, 'name': name, 'phone': phone, 'position': position, 'is_guest': isGuest ? 1 : 0};
   }
 
   factory Player.fromMap(Map<String, dynamic> map) {
@@ -21,10 +25,11 @@ class Player {
       phone: map['phone'] as String?,
       position: map['position'] as int?,
       sports: (map['sports'] as List?)?.map((e) => PlayerSport.fromMap(e as Map<String, dynamic>)).toList(),
+      isGuest: (map['is_guest'] ?? 0) == 1,
     );
   }
 
-  Player copyWith({String? name, String? phone, List<PlayerSport>? sports, int? position, String? subtitle}) {
+  Player copyWith({String? name, String? phone, List<PlayerSport>? sports, int? position, String? subtitle, bool? isGuest}) {
     return Player(
       id: id,
       name: name ?? this.name,
@@ -32,6 +37,7 @@ class Player {
       sports: sports ?? this.sports,
       position: position ?? this.position,
       subtitle: subtitle ?? this.subtitle,
+      isGuest: isGuest ?? this.isGuest,
     );
   }
 }

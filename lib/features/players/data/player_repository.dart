@@ -57,7 +57,7 @@ class PlayerRepository {
 
   Future<List<Player>> getAllPlayers() async {
     final db = await DatabaseService.instance.database;
-    final result = await db.query('players', orderBy: 'position ASC, name ASC');
+    final result = await db.query('players', where: 'is_guest = 0', orderBy: 'position ASC, name ASC');
     return result.map((e) => Player.fromMap(e)).toList();
   }
 
@@ -90,7 +90,7 @@ class PlayerRepository {
         SELECT pl.*
         FROM players pl
         INNER JOIN player_sports ps ON pl.id = ps.player_id
-        WHERE ps.sport_id = ?
+        WHERE ps.sport_id = ? AND pl.is_guest = 0
         GROUP BY pl.id
         ORDER BY pl.position ASC, pl.name ASC
       ''',
