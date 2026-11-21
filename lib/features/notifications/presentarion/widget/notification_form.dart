@@ -75,6 +75,9 @@ class _NotificationFormState extends State<NotificationForm> {
         break;
     }
 
+    // Sin número (p. ej. invitados) no se les puede escribir: no se preseleccionan.
+    initial = initial.where((p) => (p.player?.phone ?? '').isNotEmpty).toList();
+
     setState(() {
       type = currentType;
       selectedPlayers = initial;

@@ -36,6 +36,41 @@ class MatchRepository {
 
     await db.delete("match_players", where: "match_id = ?", whereArgs: [matchId]);
     await db.delete("matches", where: "id = ?", whereArgs: [matchId]);
+    await deleteOrphanGuests();
+  }
+
+  /// Reemplaza los jugadores del partido. Los invitados nuevos (playerId <= 0)
+  /// se crean aquí, y los invitados que ya no están en ningún partido se borran.
+  Future<void> saveMatchPlayers(int matchId, List<MatchPlayer> players) async {
+    final db = await DatabaseService.instance.database;
+
+    await clearMatchPlayers(matchId);
+
+    for (final mp in players) {
+      var playerId = mp.playerId;
+
+      if (playerId <= 0) {
+        final name = mp.player?.name.trim() ?? '';
+        if (name.isEmpty) continue;
+        playerId = await db.insert("players", Player(name: name, isGuest: true).toMap()..remove('id'));
+      }
+
+      await assignPlayerToMatch(matchId, mp.copyWith(playerId: playerId));
+    }
+
+    await deleteOrphanGuests();
+  }
+
+  /// Borra los invitados que ya no pertenecen a ningún partido, junto con sus
+  /// puestos en equipos (las FKs de SQLite no están activas, se limpia a mano).
+  Future<void> deleteOrphanGuests() async {
+    final db = await DatabaseService.instance.database;
+
+    const orphans = "SELECT id FROM players WHERE is_guest = 1 AND id NOT IN (SELECT player_id FROM match_players)";
+
+    await db.rawDelete("DELETE FROM match_team_players WHERE player_id IN ($orphans)");
+    await db.rawUpdate("UPDATE match_sets SET decisive_player_id = NULL WHERE decisive_player_id IN ($orphans)");
+    await db.rawDelete("DELETE FROM players WHERE id IN ($orphans)");
   }
 
   /// Obtiene todos los partidos
@@ -72,7 +107,8 @@ class MatchRepository {
         mp.*, 
         pl.name AS player_name, 
         pl.phone AS player_phone,
-        pl.position AS player_position
+        pl.position AS player_position,
+        pl.is_guest AS player_is_guest
       FROM match_players mp
       INNER JOIN players pl ON mp.player_id = pl.id
       ORDER BY mp.match_id, mp.attended DESC, mp.paid ASC, pl.position ASC
@@ -81,7 +117,14 @@ class MatchRepository {
     // Agrupar players
     final Map<int, List<MatchPlayer>> playersByMatch = {};
     for (final row in mpRows) {
-      final mp = MatchPlayer.fromMap(row);
+      final player = Player(
+        id: row['player_id'] as int,
+        name: (row['player_name'] as String?) ?? '',
+        phone: row['player_phone'] as String?,
+        position: row['player_position'] as int?,
+        isGuest: (row['player_is_guest'] ?? 0) == 1,
+      );
+      final mp = MatchPlayer.fromMap(row, player: player);
       playersByMatch.putIfAbsent(mp.matchId, () => []);
       playersByMatch[mp.matchId]!.add(mp);
     }
@@ -120,7 +163,7 @@ class MatchRepository {
 
     final result = await db.rawQuery(
       '''
-        SELECT mp.id, mp.match_id, mp.player_id, mp.attended, mp.paid, p.name, p.phone
+        SELECT mp.id, mp.match_id, mp.player_id, mp.attended, mp.paid, p.name, p.phone, p.is_guest
         FROM match_players mp INNER JOIN players p ON mp.player_id = p.id
         WHERE mp.match_id = ?
       ''',
@@ -128,7 +171,7 @@ class MatchRepository {
     );
 
     return result.map((map) {
-      final player = Player(id: map['player_id'] as int, name: map['name'] as String, phone: map['phone'] as String?);
+      final player = Player(id: map['player_id'] as int, name: map['name'] as String, phone: map['phone'] as String?, isGuest: (map['is_guest'] ?? 0) == 1);
 
       return MatchPlayer.fromMap(map, player: player);
     }).toList();

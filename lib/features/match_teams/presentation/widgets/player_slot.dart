@@ -86,7 +86,8 @@ class SlotSelection {
 }
 
 /// Abre el selector de jugador para un puesto. Muestra primero a quienes juegan
-/// esa posición y luego al resto, para no quedar bloqueado si nadie la tiene.
+/// esa posición (y a los invitados, que pueden jugar cualquiera) y luego al
+/// resto, para no quedar bloqueado si nadie la tiene.
 Future<SlotSelection?> showPlayerSlotSheet({
   required BuildContext context,
   required Position position,
@@ -94,8 +95,10 @@ Future<SlotSelection?> showPlayerSlotSheet({
   String? currentPlayerName,
   Set<int> inOtherTeam = const {},
 }) {
-  final eligible = freePlayers.where((mp) => mp.positions.any((p) => p.id == position.id)).toList();
-  final others = freePlayers.where((mp) => !mp.positions.any((p) => p.id == position.id)).toList();
+  bool playsPosition(MatchPlayer mp) => (mp.player?.isGuest ?? false) || mp.positions.any((p) => p.id == position.id);
+
+  final eligible = freePlayers.where(playsPosition).toList();
+  final others = freePlayers.where((mp) => !playsPosition(mp)).toList();
 
   // Primero los libres, al final los que ya están en otro equipo; dentro de cada grupo, por nombre.
   int byName(MatchPlayer a, MatchPlayer b) {
@@ -115,13 +118,18 @@ Future<SlotSelection?> showPlayerSlotSheet({
       final maxHeight = MediaQuery.of(sheetContext).size.height * 0.75;
 
       Widget playerTile(MatchPlayer mp, {required bool highlighted}) {
+        final isGuest = mp.player?.isGuest ?? false;
         final positions = mp.positions.map((p) => p.shortName).join(", ");
         final taken = inOtherTeam.contains(mp.playerId);
-        final subtitle = [positions.isEmpty ? "Sin posiciones asignadas" : positions, if (taken) "Ya está en otro equipo"].join(" · ");
+        final positionsText = isGuest ? "Invitado · cualquier posición" : (positions.isEmpty ? "Sin posiciones asignadas" : positions);
+        final subtitle = [positionsText, if (taken) "Ya está en otro equipo"].join(" · ");
         return ListTile(
           leading: CircleAvatar(
             backgroundColor: highlighted ? Colors.blue.shade50 : Colors.grey.shade200,
-            child: Icon(Icons.person, color: highlighted ? Colors.blue.shade700 : Colors.grey.shade600),
+            child: Icon(
+              isGuest ? Icons.person_outline : Icons.person,
+              color: isGuest ? Colors.orange.shade800 : (highlighted ? Colors.blue.shade700 : Colors.grey.shade600),
+            ),
           ),
           title: Text(mp.player?.name ?? "Jugador", style: textTheme.bodyLarge),
           subtitle: Text(subtitle, style: textTheme.bodySmall?.copyWith(color: taken ? Colors.orange.shade800 : null)),

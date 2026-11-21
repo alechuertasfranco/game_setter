@@ -19,7 +19,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 7, // v7: match_teams.formation
+      version: 8, // v8: players.is_guest
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -39,7 +39,8 @@ class DatabaseService {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       phone TEXT,
-      position INTEGER DEFAULT 0
+      position INTEGER DEFAULT 0,
+      is_guest INTEGER DEFAULT 0
     );
   ''');
 
@@ -188,6 +189,9 @@ class DatabaseService {
     if (oldVersion < 7) {
       await _addColumnIfMissing(db, 'match_teams', 'formation', 'TEXT');
       await _backfillTeamFormations(db);
+    }
+    if (oldVersion < 8) {
+      await _addColumnIfMissing(db, 'players', 'is_guest', 'INTEGER DEFAULT 0');
     }
   }
 

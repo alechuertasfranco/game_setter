@@ -43,12 +43,8 @@ class _EditMatchPageState extends State<EditMatchPage> {
       body: MatchForm(
         initialMatch: widget.match,
         onSave: (m) async {
-          final players = m.players;
           await MatchRepository().updateMatch(m);
-          await MatchRepository().clearMatchPlayers(m.id!);
-          for (final player in players) {
-            await MatchRepository().assignPlayerToMatch(m.id!, player);
-          }
+          await MatchRepository().saveMatchPlayers(m.id!, m.players);
         },
       ),
     );

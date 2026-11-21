@@ -42,6 +42,9 @@ class _MatchFormState extends State<MatchForm> {
   List<Player> availablePlayers = [];
   final List<MatchPlayer> matchPlayers = [];
 
+  /// Los invitados aún no guardados llevan un id temporal negativo.
+  int _nextGuestId = -1;
+
   bool isLoading = true;
 
   @override
@@ -128,6 +131,27 @@ class _MatchFormState extends State<MatchForm> {
     }
     await showAddPlayersSheet(context: context, sportId: selectedSportId!, playerRepository: playerRepository, matchPlayers: matchPlayers);
     setState(() {});
+  }
+
+  Future<void> _addGuest() async {
+    if (selectedSportId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Seleccione un deporte primero")));
+      return;
+    }
+
+    final name = await showDialog<String>(context: context, builder: (_) => const _GuestNameDialog());
+    if (name == null || !mounted) return;
+
+    setState(() {
+      matchPlayers.add(MatchPlayer(id: 0, matchId: 0, playerId: _nextGuestId--, player: Player(name: name, isGuest: true)));
+    });
+  }
+
+  /// Datos del jugador para mostrar: los invitados y los cargados del partido
+  /// ya traen el Player; los recién agregados se buscan en la lista del deporte.
+  Player _playerFor(MatchPlayer mp) {
+    if (mp.player != null) return mp.player!;
+    return availablePlayers.firstWhere((x) => x.id == mp.playerId, orElse: () => Player(id: mp.playerId, name: "Jugador"));
   }
 
   void _toggleAttended(MatchPlayer mp) => _updatePlayer(mp, attended: !mp.attended);
@@ -229,17 +253,23 @@ class _MatchFormState extends State<MatchForm> {
   }
 
   Widget _buildPlayerTile(MatchPlayer mp, Player p, TextTheme textTheme) {
+    final accent = p.isGuest ? Colors.orange.shade800 : Colors.blue;
+
     return Card(
       margin: const EdgeInsets.all(0),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
         leading: Container(
-          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withAlpha(12)),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: accent.withAlpha(12)),
           padding: const EdgeInsets.all(8),
-          child: const Icon(Icons.person, color: Colors.blue, size: 28),
+          child: Icon(p.isGuest ? Icons.person_outline : Icons.person, color: accent, size: 28),
         ),
         title: Text(p.name, style: textTheme.bodyLarge),
-        subtitle: p.phone != null ? Text(p.phone!) : null,
+        subtitle: p.isGuest
+            ? Text("Invitado · solo este partido", style: textTheme.bodySmall?.copyWith(color: accent))
+            : p.phone != null
+            ? Text(p.phone!)
+            : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -337,6 +367,13 @@ class _MatchFormState extends State<MatchForm> {
                                   onPressed: _showAddPlayersSheet,
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              ElevatedButton.icon(
+                                icon: Icon(Icons.person_add_alt, color: Colors.orange.shade800),
+                                style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.orange.shade800)),
+                                label: Text("Invitado", style: textTheme.titleMedium?.copyWith(color: Colors.orange.shade800)),
+                                onPressed: _addGuest,
+                              ),
                             ],
                           ),
 
@@ -354,7 +391,7 @@ class _MatchFormState extends State<MatchForm> {
                               itemCount: matchPlayers.length,
                               itemBuilder: (_, i) {
                                 final mp = matchPlayers[i];
-                                final p = availablePlayers.firstWhere((x) => x.id == mp.playerId);
+                                final p = _playerFor(mp);
 
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -391,6 +428,62 @@ class _MatchFormState extends State<MatchForm> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Pide solo el nombre del invitado. Devuelve el nombre o null si se cancela.
+class _GuestNameDialog extends StatefulWidget {
+  const _GuestNameDialog();
+
+  @override
+  State<_GuestNameDialog> createState() => _GuestNameDialogState();
+}
+
+class _GuestNameDialogState extends State<_GuestNameDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _controller.text.trim();
+    if (name.isEmpty) return;
+    Navigator.pop(context, name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return AlertDialog(
+      title: Text("Agregar invitado", style: textTheme.titleMedium),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(labelText: "Nombre"),
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Solo juega en este partido: no se guarda en Jugadores y puede ocupar cualquier posición.",
+            style: textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+        TextButton(onPressed: _controller.text.trim().isEmpty ? null : _submit, child: const Text("Agregar")),
+      ],
     );
   }
 }
